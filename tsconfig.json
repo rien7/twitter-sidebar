@@ -1,7 +1,29 @@
 {
-  "files": [],
-  "references": [
-    { "path": "./tsconfig.app.json" },
-    { "path": "./tsconfig.node.json" }
-  ]
+  "compilerOptions": {
+    "baseUrl": "./",
+    "target": "esnext",
+    "lib": ["DOM", "DOM.Iterable", "ESNext"],
+    "skipLibCheck": false,
+    "esModuleInterop": false,
+    "allowSyntheticDefaultImports": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "module": "esnext",
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "noEmit": true,
+    "paths": {
+      "@/*": ["src/*"],
+      "$/*": ["src/utils/*"],
+      "#/*": ["src/types/*"],
+      "@common/*": ["src/common/*"],
+      "@icons/*": ["src/icons/*"],
+      "@store/*": ["src/store/*"],
+    },
+    "jsx": "react-jsx",
+    "types": [
+      "@types/chrome"
+    ],
+  },
+  "include": ["./src"]
 }
