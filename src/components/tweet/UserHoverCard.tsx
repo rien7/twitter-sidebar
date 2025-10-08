@@ -269,11 +269,11 @@ const UserHoverCard = ({
                 "ml-auto rounded-full px-4 py-1 text-[15px] hover:cursor-pointer leading-[20px] min-h-[36px] border border-solid font-semibold focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60 transition-colors",
                 (!isFollowing ||
                   (isFollowing && isHoveringButton && fromUnfollow)) &&
-                  "bg-twitter-background-inverse border-twitter-background-inverse text-white",
+                  "bg-twitter-background-inverse border-twitter-background-inverse text-twitter-text-inverse",
                 isFollowing &&
                   isHoveringButton &&
                   !fromUnfollow &&
-                  "bg-red-50 border-red-500 text-red-500",
+                  "bg-red-50 dark:bg-transparent border-red-500 text-red-500",
                 isFollowing &&
                   !isHoveringButton &&
                   !fromUnfollow &&
