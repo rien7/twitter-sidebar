@@ -3,6 +3,7 @@ import {
   MediaEntity,
   TweetResult,
   TweetResultByRestIdResponse,
+  TweetTombstone,
   UserResult,
 } from "@/types/response";
 import { getHighResolutionUrl, selectVideoVariant } from "./media";
@@ -13,6 +14,14 @@ export function isTweetResult(value: unknown): value is TweetResult {
       typeof value === "object" &&
       (value as TweetResult).__typename === "Tweet" &&
       getTweetIdFromTweet(value as TweetResult)
+  );
+}
+
+export function isTweetTombstone(value: unknown): value is TweetTombstone {
+  return Boolean(
+    value &&
+      typeof value === "object" &&
+      (value as TweetTombstone).__typename === "TweetTombstone"
   );
 }
 

@@ -6,6 +6,7 @@
   --color-twitter-accent: rgb(29, 155, 240);
   --color-twitter-text-primary: #0f1419;
   --color-twitter-text-secondary: #536471;
+
   --color-twitter-text-error: #f4212e;
   --color-twitter-text-divider: #cfd9de;
 
@@ -25,6 +26,7 @@
   --color-twitter-border-strong: #cfd9de;
   --color-twitter-border-input: #d0d5d7;
 
+  --color-twitter-fill: #f7f9f9;
   --color-twitter-fill-muted: #536471;
   --color-twitter-fill-accent: #1d9bf0;
 
@@ -37,7 +39,7 @@
 @layer theme {
   .dark {
     --color-twitter-text-primary: #e7e9ea;
-    --color-twitter-text-secondary: #8b98a5;
+    --color-twitter-text-secondary: #71767b;
     --color-twitter-text-error: #f4212e;
     --color-twitter-text-divider: #3b3f44;
 
@@ -57,6 +59,7 @@
     --color-twitter-border-strong: #3b4651;
     --color-twitter-border-input: #38444d;
 
+    --color-twitter-fill: #16181c;
     --color-twitter-fill-muted: #8b98a5;
     --color-twitter-fill-accent: #1d9bf0;
 

@@ -8,6 +8,7 @@ import {
   getTweetDetail,
   getTweetRelation,
   resolveTweet,
+  getDeletedTweet,
 } from "@/store/tweetsStore";
 import { TweetData, TweetRelation } from "@/types/tweet";
 
@@ -65,9 +66,7 @@ const hydrateDetailInBackground = async (
   }
 };
 
-const buildSidebarSnapshot = (
-  tweetId: string
-): SidebarSnapshot | undefined => {
+const buildSidebarSnapshot = (tweetId: string): SidebarSnapshot | undefined => {
   const data = getTweetAndRelation(tweetId);
   if (!data) return undefined;
   const { tweet, relationship, relateTweets } = data;
@@ -171,8 +170,14 @@ function getRelateAncestorsAndChildren(
 
   const getReplyTo = (tweetId: string) => {
     const tweet = getTweet(tweetId);
-    if (tweet === undefined) return;
     const map = ensureRelateTweets();
+    if (tweet === undefined) {
+      const deletedTweet = getDeletedTweet(tweetId);
+      if (deletedTweet !== undefined && deletedTweet.parentTweetId !== null) {
+        getReplyTo(deletedTweet.parentTweetId);
+      }
+      return;
+    }
     map[tweet.result.rest_id] = tweet;
     const relationshipRecord = getTweetRelation(tweetId);
     if (

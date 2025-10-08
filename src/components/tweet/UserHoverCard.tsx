@@ -191,7 +191,6 @@ const UserHoverCard = ({
 
     const fetchData = async () => {
       const result = await fetchFollowingList({ userId, count: 3 });
-      console.log(result);
       if (cancelled) return;
       setFollowingPreview(result.users);
       setFollowingTotalCount(

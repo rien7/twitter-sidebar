@@ -3,6 +3,7 @@ import {
   TimelineModuleContent,
   TweetResponse,
   TweetResult,
+  TweetTombstone,
 } from "@/types/response";
 import { TweetData, TweetRelation } from "@/types/tweet";
 import { getTweetIdFromTweet, isTweetResult } from "@/utils/responseData";
@@ -19,6 +20,15 @@ type CachedTweetDetail = {
 };
 
 const tweetDetailCache = new Map<string, CachedTweetDetail>();
+
+export interface DeletedTweetData {
+  tweetId: string;
+  parentTweetId: string | null;
+  tombstone: TweetTombstone;
+  recordedAt: number;
+}
+
+const deletedTweetStore = new Map<string, DeletedTweetData>();
 
 export function storeTweet(
   tweet: TweetResult,
@@ -55,10 +65,11 @@ export function resolveTweet(tweetId: string): TweetData | null {
       (candidate.result.retweeted_status_result?.result?.__typename === "Tweet"
         ? (candidate.result.retweeted_status_result.result as TweetResult)
         : undefined) ??
-      ((candidate.result.legacy as
-        | { retweeted_status_result?: { result?: TweetResult } }
-        | undefined)
-        ?.retweeted_status_result?.result as TweetResult | undefined);
+      ((
+        candidate.result.legacy as
+          | { retweeted_status_result?: { result?: TweetResult } }
+          | undefined
+      )?.retweeted_status_result?.result as TweetResult | undefined);
 
     if (!retweeted || !isTweetResult(retweeted)) {
       continue;
@@ -103,31 +114,38 @@ export function extractTweetFromDetail(
   tweetId: string
 ): TweetResult | undefined {
   if (!detail) return undefined;
-  const instructions =
-    (detail.data?.threaded_conversation_with_injections_v2?.instructions ??
-      []) as Instruction[];
+  const instructions = (detail.data?.threaded_conversation_with_injections_v2
+    ?.instructions ?? []) as Instruction[];
   for (const instruction of instructions) {
     if (!instruction || instruction.type !== "TimelineAddEntries") continue;
     const entries = instruction.entries ?? [];
     for (const entry of entries) {
       if (!entry) continue;
       if (entry.entryId === `tweet-${tweetId}`) {
-        const direct =
-          ((entry.content as {
-            itemContent?: { tweet_results?: { result?: TweetResult } };
-          } | null | undefined)?.itemContent?.tweet_results as
-            | { result?: TweetResult }
-            | undefined)?.result;
+        const direct = (
+          (
+            entry.content as
+              | {
+                  itemContent?: { tweet_results?: { result?: TweetResult } };
+                }
+              | null
+              | undefined
+          )?.itemContent?.tweet_results as { result?: TweetResult } | undefined
+        )?.result;
         if (isTweetResult(direct)) return direct;
       }
 
       const content = entry.content as TimelineModuleContent | undefined;
-      const inlineTweet =
-        ((content as {
-          itemContent?: { tweet_results?: { result?: TweetResult } };
-        } | null | undefined)?.itemContent?.tweet_results as
-          | { result?: TweetResult }
-          | undefined)?.result;
+      const inlineTweet = (
+        (
+          content as
+            | {
+                itemContent?: { tweet_results?: { result?: TweetResult } };
+              }
+            | null
+            | undefined
+        )?.itemContent?.tweet_results as { result?: TweetResult } | undefined
+      )?.result;
       if (
         inlineTweet &&
         isTweetResult(inlineTweet) &&
@@ -142,9 +160,11 @@ export function extractTweetFromDetail(
             continue;
           }
           const tweet =
-            (item?.item?.itemContent?.tweet_results as
-              | { result?: TweetResult }
-              | undefined)?.result ?? undefined;
+            (
+              item?.item?.itemContent?.tweet_results as
+                | { result?: TweetResult }
+                | undefined
+            )?.result ?? undefined;
           if (
             tweet &&
             isTweetResult(tweet) &&
@@ -167,6 +187,23 @@ export function applyDetailToTweetCache(
   if (!tweet) return;
   const existing = tweetsStore.get(tweetId);
   storeTweet(tweet, existing?.controllerData ?? null, true);
+}
+
+export function storeDeletedTweet(
+  tweetId: string,
+  tombstone: TweetTombstone,
+  parentTweetId: string | null
+) {
+  deletedTweetStore.set(tweetId, {
+    tweetId,
+    parentTweetId,
+    tombstone,
+    recordedAt: Date.now(),
+  });
+}
+
+export function getDeletedTweet(tweetId: string) {
+  return deletedTweetStore.get(tweetId);
 }
 
 function analyzeAndCreateRelations(

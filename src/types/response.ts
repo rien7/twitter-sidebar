@@ -137,8 +137,34 @@ export interface ItemContent {
 /* ---------------------------- Tweet Core -------------------------- */
 
 export type TweetResults = {
-  result?: TweetResult;
+  result?: TweetResult | TweetTombstone;
 };
+
+export interface TweetTombstone {
+  __typename: "TweetTombstone";
+  tombstone?: {
+    __typename?: string;
+    text?: TombstoneText;
+  };
+  [k: string]: unknown;
+}
+
+export interface TombstoneText {
+  text?: string;
+  rtl?: boolean;
+  entities?: TombstoneEntity[];
+}
+
+export interface TombstoneEntity {
+  fromIndex?: number;
+  toIndex?: number;
+  ref?: {
+    type?: string;
+    url?: string;
+    urlType?: string;
+    [k: string]: unknown;
+  };
+}
 
 export interface TweetResult {
   __typename: "Tweet";

@@ -1,9 +1,14 @@
 import { useMemo } from "react";
 import TweetCard from "@/components/tweet/TweetCard";
+import DeletedTweetCard from "@/components/tweet/DeletedTweetCard";
 import type { TweetResult } from "@/types/response";
 import type { SidebarTweetStatus } from "@/types/sidebar";
 import { TweetData, TweetRelation } from "@/types/tweet";
-import { getTweetRelation } from "@/store/tweetsStore";
+import {
+  getTweetRelation,
+  DeletedTweetData,
+  getDeletedTweet,
+} from "@/store/tweetsStore";
 import { buildAuthorSpine } from "@/utils/threadPrune";
 import { getUserIdFromTweet } from "@/utils/responseData";
 
@@ -15,7 +20,12 @@ interface SidebarTimelineProps {
   onSelectTweet: (tweet: TweetResult, controllerData?: string | null) => void;
 }
 
+type AncestorEntry =
+  | { kind: "tweet"; data: TweetData }
+  | { kind: "deleted"; data: DeletedTweetData };
+
 type TimelineTweetItem = {
+  kind: "tweet";
   key: string;
   tweet: TweetResult;
   variant: "main" | "reply";
@@ -25,7 +35,17 @@ type TimelineTweetItem = {
   isAncestor?: boolean;
 };
 
-type TimelineItem = TimelineTweetItem;
+type TimelineDeletedItem = {
+  kind: "deleted";
+  key: string;
+  variant: "main" | "reply";
+  linkTop?: boolean;
+  linkBottom?: boolean;
+  isAncestor?: boolean;
+  tombstone: DeletedTweetData;
+};
+
+type TimelineItem = TimelineTweetItem | TimelineDeletedItem;
 
 const isDetailReady = (status: SidebarTweetStatus) =>
   status === "success" || status === "partical";
@@ -35,24 +55,31 @@ const useAncestorTweets = (
   relateTweets: Record<string, TweetData> | null
 ) => {
   const hasParentTweet = tweetRelation?.replyTo !== null;
-  return useMemo(() => {
-    if (!tweetRelation || !relateTweets || !hasParentTweet)
-      return [] as TweetData[];
-    const ancestors: TweetData[] = [];
+  return useMemo<AncestorEntry[]>(() => {
+    if (!tweetRelation || !hasParentTweet) return [];
+    const ancestors: AncestorEntry[] = [];
     let replyTo = tweetRelation.replyTo;
     while (replyTo !== undefined) {
-      const ancestorTweet = relateTweets[replyTo];
-      if (ancestorTweet === undefined) break;
-      const ancestorRelation = getTweetRelation(replyTo);
-      ancestors.push(ancestorTweet);
-      if (
-        ancestorRelation !== undefined &&
-        ancestorRelation.replyTo !== undefined
-      ) {
-        replyTo = ancestorRelation.replyTo;
-      } else {
-        replyTo = undefined;
+      const ancestorTweet = relateTweets?.[replyTo];
+      if (ancestorTweet?.result) {
+        ancestors.push({ kind: "tweet", data: ancestorTweet });
+        const ancestorRelation = getTweetRelation(replyTo);
+        if (
+          ancestorRelation !== undefined &&
+          ancestorRelation.replyTo !== undefined
+        ) {
+          replyTo = ancestorRelation.replyTo;
+        } else {
+          replyTo = undefined;
+        }
+        continue;
       }
+
+      const deleted = getDeletedTweet(replyTo);
+      if (!deleted) break;
+      const parentTweetId = deleted.parentTweetId;
+      ancestors.push({ kind: "deleted", data: deleted });
+      replyTo = parentTweetId ?? undefined;
     }
     return ancestors.reverse();
   }, [hasParentTweet, tweetRelation, relateTweets]);
@@ -63,7 +90,7 @@ const useTimelineItems = (
   status: SidebarTweetStatus,
   tweetRelation: TweetRelation | null,
   relateTweets: Record<string, TweetData> | null,
-  ancestorTweets: TweetData[]
+  ancestorTweets: AncestorEntry[]
 ) => {
   return useMemo<TimelineItem[]>(() => {
     if (!tweet || !tweet.result) return [];
@@ -73,20 +100,36 @@ const useTimelineItems = (
     const items: TimelineItem[] = [];
 
     ancestorTweets.forEach((ancestor, index) => {
-      const key = ancestor.result.rest_id ?? `ancestor-${index}`;
+      if (ancestor.kind === "tweet") {
+        const key = ancestor.data.result.rest_id ?? `ancestor-${index}`;
+        items.push({
+          kind: "tweet",
+          key,
+          tweet: ancestor.data.result,
+          variant: "reply",
+          linkTop: index > 0,
+          linkBottom: true,
+          isAncestor: true,
+        });
+        return;
+      }
+
+      const key = ancestor.data.tweetId ?? `deleted-ancestor-${index}`;
       items.push({
+        kind: "deleted",
         key,
-        tweet: ancestor.result,
         variant: "reply",
         linkTop: index > 0,
         linkBottom: true,
         isAncestor: true,
+        tombstone: ancestor.data,
       });
     });
 
     if (mainTweet) {
       const mainKey = mainTweet.rest_id ?? "main-key";
       items.push({
+        kind: "tweet",
         key: mainKey,
         tweet: mainTweet,
         variant: "main",
@@ -102,38 +145,45 @@ const useTimelineItems = (
       tweetRelation.replies
     ) {
       for (const firstId of tweetRelation.replies.keys()) {
-        const firstT = relateTweets[firstId];
-        if (!firstT?.result) continue;
-        const firstKey = firstT.result.rest_id;
-
         const branchSpine = buildAuthorSpine(
           firstId,
           getUserIdFromTweet(mainTweet),
           relateTweets
         );
 
-        items.push({
-          key: firstKey,
-          tweet: firstT.result,
-          variant: "reply",
-          linkBottom: branchSpine.length > 1,
-          controllerData: firstT.controllerData ?? null,
-        });
+        branchSpine.forEach((id, indexInBranch) => {
+          const isLast = indexInBranch === branchSpine.length - 1;
+          const linkTop = indexInBranch > 0;
+          const linkBottom = branchSpine.length > 1 && !isLast;
+          const node = relateTweets?.[id];
 
-        for (let j = 1; j < branchSpine.length; j++) {
-          const id = branchSpine[j];
-          const t = relateTweets[id];
-          if (!t?.result) break;
-          const isLast = j === branchSpine.length - 1;
+          if (node?.result) {
+            items.push({
+              kind: "tweet",
+              key: node.result.rest_id,
+              tweet: node.result,
+              variant: "reply",
+              linkTop,
+              linkBottom,
+              controllerData: node.controllerData ?? null,
+            });
+            return;
+          }
+
+          const deleted = getDeletedTweet(id);
+          if (!deleted) {
+            // If we encounter an ID without cached data, stop extending this branch.
+            return;
+          }
           items.push({
-            key: t.result.rest_id,
-            tweet: t.result,
+            kind: "deleted",
+            key: deleted.tweetId,
             variant: "reply",
-            linkTop: true,
-            linkBottom: !isLast,
-            controllerData: t.controllerData ?? null,
+            linkTop,
+            linkBottom,
+            tombstone: deleted,
           });
-        }
+        });
       }
     }
 
@@ -167,18 +217,33 @@ export const SidebarTimeline = ({
 
   return (
     <>
-      {timelineItems.map((item) => (
-        <TweetCard
-          key={item.key}
-          tweet={item.tweet}
-          variant={item.variant}
-          linkTop={item.linkTop}
-          linkBottom={item.linkBottom}
-          controllerData={item.controllerData ?? null}
-          onSelect={onSelectTweet}
-          showDivider={!item.linkBottom && !item.isAncestor}
-        />
-      ))}
+      {timelineItems.map((item) => {
+        const showDivider = !item.linkBottom && !item.isAncestor;
+        if (item.kind === "tweet") {
+          return (
+            <TweetCard
+              key={item.key}
+              tweet={item.tweet}
+              variant={item.variant}
+              linkTop={item.linkTop}
+              linkBottom={item.linkBottom}
+              controllerData={item.controllerData ?? null}
+              onSelect={onSelectTweet}
+              showDivider={showDivider}
+            />
+          );
+        }
+        return (
+          <DeletedTweetCard
+            key={item.key}
+            tombstone={item.tombstone}
+            variant={item.variant}
+            linkTop={item.linkTop}
+            linkBottom={item.linkBottom}
+            showDivider={showDivider}
+          />
+        );
+      })}
     </>
   );
 };
