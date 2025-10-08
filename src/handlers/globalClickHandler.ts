@@ -47,7 +47,9 @@ const normalizeTarget = (event: MouseEvent): HTMLElement | null => {
 const isVideoController = (node: HTMLElement): boolean => {
   const scrubberEl = document.querySelector('[data-testid="scrubber"]');
   if (!scrubberEl) {
-    const muteBtn = document.querySelector('button[aria-label="Mute"]');
+    const muteBtn =
+      document.querySelector('button[aria-label="Mute"]') ??
+      document.querySelector('button[aria-label="Unmute"]');
     if (!muteBtn) return false;
     const parentElement = muteBtn.parentElement;
     if (!parentElement) return false;
@@ -144,7 +146,24 @@ export const registerGlobalClickInterceptor = () => {
     event.preventDefault();
     openTweetInSidebar(tweetId);
   };
+  const handlePointerDown = (event: MouseEvent) => {
+    const targetElement = normalizeTarget(event);
+    if (targetElement && isVideoController(targetElement)) {
+      event.stopPropagation();
+    }
+
+    if (handleTimelineMediaClick(event, targetElement, true)) {
+      event.stopPropagation();
+    }
+  };
 
   document.addEventListener("click", handleClick, { capture: true });
-  return () => document.removeEventListener("click", handleClick, true);
+  document.addEventListener("pointerdown", handlePointerDown, {
+    capture: true,
+  });
+
+  return () => {
+    document.removeEventListener("pointerdown", handlePointerDown, true);
+    document.removeEventListener("click", handleClick, true);
+  };
 };

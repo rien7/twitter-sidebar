@@ -21,7 +21,8 @@ export const collectMediaNodes = (article: HTMLElement) =>
 
 export const handleTimelineMediaClick = (
   event: MouseEvent,
-  targetElement: HTMLElement | null
+  targetElement: HTMLElement | null,
+  checkOnly?: boolean
 ): boolean => {
   if (!targetElement) return false;
   const mediaTarget = targetElement.closest<HTMLElement>(MEDIA_NODE_SELECTOR);
@@ -61,6 +62,8 @@ export const handleTimelineMediaClick = (
   if (typeof event.stopImmediatePropagation === "function") {
     event.stopImmediatePropagation();
   }
+
+  if (checkOnly) return false;
 
   const activeKey = resolvedItem.key;
   const opened = openTweetInSidebar(inlineContext?.tweetId ?? tweetId);
