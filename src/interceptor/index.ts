@@ -2,14 +2,22 @@ import { postToContent } from "./messaging";
 import { performTweetActionRequest } from "./tweetActions";
 import { performTweetDetailRequest } from "./tweetDetailTemplate";
 import { installXhrInterceptor } from "./xhrInterceptor";
+import { performFriendshipRequest } from "./friendships";
+import { performFollowingListRequest } from "./followingList";
 import {
   CONTENT_EVENT_TYPE_ACTION_REQUEST,
   CONTENT_EVENT_TYPE_DETAIL_REQUEST,
+  CONTENT_EVENT_TYPE_FRIENDSHIP_REQUEST,
+  CONTENT_EVENT_TYPE_FOLLOWING_LIST_REQUEST,
   EXT_BRIDGE_SOURCE,
   INTERCEPTOR_EVENT_TYPE_ACTION_ERROR,
   INTERCEPTOR_EVENT_TYPE_ACTION_RESPONSE,
   INTERCEPTOR_EVENT_TYPE_DETAIL_ERROR,
   INTERCEPTOR_EVENT_TYPE_DETAIL_RESPONSE,
+  INTERCEPTOR_EVENT_TYPE_FRIENDSHIP_ERROR,
+  INTERCEPTOR_EVENT_TYPE_FRIENDSHIP_RESPONSE,
+  INTERCEPTOR_EVENT_TYPE_FOLLOWING_LIST_ERROR,
+  INTERCEPTOR_EVENT_TYPE_FOLLOWING_LIST_RESPONSE,
   MESSAGE_DIRECTION_TO_INTERCEPTOR,
 } from "@common/bridge";
 
@@ -74,6 +82,68 @@ window.addEventListener("message", async (event: MessageEvent) => {
       });
     } catch (error) {
       postToContent(INTERCEPTOR_EVENT_TYPE_ACTION_ERROR, {
+        requestId: payload.requestId,
+        error:
+          error instanceof Error ? error.message : String(error ?? "未知错误"),
+      });
+    }
+  }
+
+  if (data.type === CONTENT_EVENT_TYPE_FRIENDSHIP_REQUEST) {
+    const payload = data.payload as {
+      requestId?: string;
+      action?: "follow" | "unfollow";
+      userId?: string;
+      body?: string;
+    };
+    if (!payload?.requestId || !payload.action || !payload.userId || !payload.body)
+      return;
+
+    try {
+      const result = await performFriendshipRequest({
+        action: payload.action,
+        userId: payload.userId,
+        body: payload.body,
+      });
+      postToContent(INTERCEPTOR_EVENT_TYPE_FRIENDSHIP_RESPONSE, {
+        requestId: payload.requestId,
+        data: result,
+        action: payload.action,
+        userId: payload.userId,
+      });
+    } catch (error) {
+      postToContent(INTERCEPTOR_EVENT_TYPE_FRIENDSHIP_ERROR, {
+        requestId: payload.requestId,
+        error:
+          error instanceof Error ? error.message : String(error ?? "未知错误"),
+      });
+    }
+  }
+
+  if (data.type === CONTENT_EVENT_TYPE_FOLLOWING_LIST_REQUEST) {
+    const payload = data.payload as {
+      requestId?: string;
+      userId?: string;
+      count?: number;
+      cursor?: string;
+    };
+    if (!payload?.requestId || !payload.userId) return;
+
+    try {
+      const result = await performFollowingListRequest({
+        userId: payload.userId,
+        count: payload.count,
+        cursor: payload.cursor,
+      });
+      postToContent(INTERCEPTOR_EVENT_TYPE_FOLLOWING_LIST_RESPONSE, {
+        requestId: payload.requestId,
+        data: result,
+        userId: payload.userId,
+        count: payload.count,
+        cursor: payload.cursor,
+      });
+    } catch (error) {
+      postToContent(INTERCEPTOR_EVENT_TYPE_FOLLOWING_LIST_ERROR, {
         requestId: payload.requestId,
         error:
           error instanceof Error ? error.message : String(error ?? "未知错误"),

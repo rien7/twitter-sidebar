@@ -1,7 +1,13 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import type { UrlEntity, UserResult } from "@/types/response";
 import { cn } from "@/utils/cn";
+import { followUser, unfollowUser } from "@/api/friendships";
+import { renderWithTwemoji } from "@/utils/twemoji";
+import {
+  fetchFollowingList,
+  type FollowingListEntry,
+} from "@/api/followingList";
 
 const formatter = new Intl.NumberFormat("zh-CN");
 
@@ -55,7 +61,10 @@ const buildDescriptionNodes = (user?: UserResult | null) => {
     if (to <= from) return;
     const text = characters.slice(from, to).join("");
     if (!text) return;
-    nodes.push({ key: `text-${keyIndex++}`, node: <span>{text}</span> });
+    nodes.push({
+      key: `text-${keyIndex++}`,
+      node: <span>{renderWithTwemoji(text)}</span>,
+    });
   };
 
   normalized.forEach((entity) => {
@@ -105,7 +114,25 @@ const UserHoverCard = ({
 
   const followers = formatCount(user?.legacy?.followers_count ?? null);
   const following = formatCount(user?.legacy?.friends_count ?? null);
-  const isFollowing = Boolean(user?.relationship_perspectives?.following);
+  const derivedFollowing = Boolean(user?.relationship_perspectives?.following);
+  const userId = user?.rest_id ?? (user?.id as string | undefined);
+  const [isFollowing, setIsFollowing] = useState(derivedFollowing);
+  const [fromUnfollow, setFromUnfollow] = useState(false);
+  const [isHoveringButton, setIsHoveringButton] = useState(false);
+
+  const [followingPreview, setFollowingPreview] = useState<
+    FollowingListEntry[] | null
+  >(null);
+  const [followingTotalCount, setFollowingTotalCount] = useState<number | null>(
+    null
+  );
+  const lastFollowingRequestUserIdRef = useRef<string | null>(null);
+  const effectiveFollowing = useMemo(() => {
+    if (typeof followingTotalCount === "number") {
+      return formatCount(followingTotalCount);
+    }
+    return following;
+  }, [followingTotalCount, following]);
 
   const clearTimers = () => {
     if (enterTimer.current !== null) {
@@ -128,13 +155,80 @@ const UserHoverCard = ({
     leaveTimer.current = window.setTimeout(() => setOpen(false), 480);
   };
 
+  const handleMouseEnterButton = () => {
+    setIsHoveringButton(true);
+  };
+
+  const handleMouseLeaveButton = () => {
+    setIsHoveringButton(false);
+    setFromUnfollow(false);
+  };
+
+  useEffect(() => {
+    if (!userId) {
+      setFollowingPreview(null);
+      setFollowingTotalCount(null);
+      lastFollowingRequestUserIdRef.current = null;
+      return;
+    }
+    if (lastFollowingRequestUserIdRef.current !== userId) {
+      setFollowingPreview(null);
+    }
+  }, [userId]);
+
   useEffect(() => () => clearTimers(), []);
 
-  const followLabel = isFollowing ? "正在关注" : "关注";
-  const handleFollow = () => {
-    if (!screenName) return;
-    window.open(`https://twitter.com/${screenName}`, "_blank", "noopener");
-  };
+  useEffect(() => {
+    if (!open || !userId) return;
+    if (
+      lastFollowingRequestUserIdRef.current === userId &&
+      followingPreview !== null
+    ) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const fetchData = async () => {
+      const result = await fetchFollowingList({ userId, count: 3 });
+      console.log(result);
+      if (cancelled) return;
+      setFollowingPreview(result.users);
+      setFollowingTotalCount(
+        typeof result.totalCount === "number" ? result.totalCount : null
+      );
+    };
+
+    fetchData();
+    lastFollowingRequestUserIdRef.current = userId;
+
+    return () => {
+      cancelled = true;
+    };
+  }, [open, userId, followingPreview]);
+
+  const followLabel = isFollowing
+    ? isHoveringButton && !fromUnfollow
+      ? "取消关注"
+      : "正在关注"
+    : "关注";
+  const handleFollow = useCallback(async () => {
+    if (!userId) return;
+    const previousState = isFollowing;
+    const nextState = !previousState;
+    setIsFollowing(nextState);
+    try {
+      if (previousState) {
+        await unfollowUser(userId);
+      } else {
+        setFromUnfollow(true);
+        await followUser(userId);
+      }
+    } catch (error) {
+      console.error("[TSB][Follow] 操作失败", error);
+      setIsFollowing(nextState);
+    }
+  }, [userId, isFollowing, setIsFollowing]);
 
   const alignmentClass = placement === "right" ? "right-0" : "left-0";
 
@@ -167,11 +261,24 @@ const UserHoverCard = ({
             <button
               type="button"
               onClick={handleFollow}
+              disabled={!userId}
+              onMouseEnter={handleMouseEnterButton}
+              onMouseLeave={handleMouseLeaveButton}
+              onFocus={handleMouseEnterButton}
+              onBlur={handleMouseLeaveButton}
               className={cn(
-                "focus-visible:ring-twitter-ring-focus dark:focus-visible:ring-twitter-dark-ring-focus focus-visible:ring-offset-twitter-ring-offset dark:focus-visible:ring-offset-twitter-dark-ring-offset ml-auto rounded-full px-4 py-1 text-[15px] font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
-                isFollowing
-                  ? "border-twitter-border-strong dark:border-twitter-dark-border-strong text-twitter-text-primary dark:text-twitter-dark-text-primary border bg-transparent"
-                  : "bg-twitter-background-inverse dark:bg-twitter-dark-background-inverse dark:text-twitter-dark-text-primary hover:bg-twitter-background-hover-inverse dark:hover:bg-twitter-dark-background-hover-inverse text-white"
+                "ml-auto rounded-full px-4 py-1 text-[15px] hover:cursor-pointer leading-[20px] min-h-[36px] border border-solid font-semibold focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60 transition-colors",
+                (!isFollowing ||
+                  (isFollowing && isHoveringButton && fromUnfollow)) &&
+                  "bg-twitter-background-inverse border-twitter-background-inverse text-white",
+                isFollowing &&
+                  isHoveringButton &&
+                  !fromUnfollow &&
+                  "bg-red-50 border-red-500 text-red-500",
+                isFollowing &&
+                  !isHoveringButton &&
+                  !fromUnfollow &&
+                  "border-twitter-border-strong text-twitter-text-primary bg-transparent"
               )}
             >
               {followLabel}
@@ -179,7 +286,7 @@ const UserHoverCard = ({
           </div>
           <div className="mt-3 flex flex-col gap-1">
             <div className="text-twitter-text-primary dark:text-twitter-dark-text-primary text-[17px] font-bold">
-              {name}
+              {renderWithTwemoji(name)}
             </div>
             {screenName ? (
               <div className="text-twitter-text-secondary dark:text-twitter-dark-text-secondary text-[15px]">
@@ -196,13 +303,13 @@ const UserHoverCard = ({
               </div>
             ) : null}
           </div>
-          {(followers || following) && (
+          {(followers || effectiveFollowing) && (
             <div className="mt-3 flex gap-4 text-[15px]">
-              {following ? (
+              {effectiveFollowing ? (
                 <a
                   href={
                     screenName
-                      ? `https://twitter.com/${screenName}/following`
+                      ? `https://x.com/${screenName}/following`
                       : undefined
                   }
                   target="_blank"
@@ -210,7 +317,7 @@ const UserHoverCard = ({
                   className="text-twitter-text-secondary dark:text-twitter-dark-text-secondary hover:underline"
                 >
                   <span className="text-twitter-text-primary dark:text-twitter-dark-text-primary font-semibold">
-                    {following}
+                    {effectiveFollowing}
                   </span>{" "}
                   正在关注
                 </a>
@@ -219,7 +326,7 @@ const UserHoverCard = ({
                 <a
                   href={
                     screenName
-                      ? `https://twitter.com/${screenName}/followers`
+                      ? `https://x.com/${screenName}/followers`
                       : undefined
                   }
                   target="_blank"
@@ -234,6 +341,48 @@ const UserHoverCard = ({
               ) : null}
             </div>
           )}
+          {followingPreview &&
+          followingPreview.length > 0 &&
+          followingTotalCount ? (
+            <a
+              className="mt-3 flex"
+              href={`https://x.com/${screenName}/followers_you_follow`}
+            >
+              <div className="h-full flex shrink-0">
+                {followingPreview.slice(0, 3).map((entry, index) => {
+                  const previewAvatar = entry.avatarUrl ?? undefined;
+                  return (
+                    <img
+                      key={entry.id}
+                      src={previewAvatar}
+                      alt={`${entry.name || entry.screenName} 的头像`}
+                      className={cn(
+                        "h-7 w-7 rounded-full object-cover border-white border border-solid top-0 bottom-0",
+                        index > 0 && "-ml-3.5"
+                      )}
+                      style={{
+                        zIndex: 4 - index,
+                      }}
+                    />
+                  );
+                })}
+              </div>
+              <div className="grow ml-1 text-twitter-text-secondary text-sm">
+                Following by{" "}
+                {followingPreview.slice(0, 2).map((f, i) => {
+                  return (
+                    <>
+                      {renderWithTwemoji(f.name)}
+                      {i === 0 ? ", " : undefined}
+                    </>
+                  );
+                })}{" "}
+                {followingTotalCount > 2
+                  ? `and ${followingTotalCount - 2} others you follow`
+                  : undefined}
+              </div>
+            </a>
+          ) : null}
         </div>
       ) : null}
     </div>

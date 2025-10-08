@@ -47,3 +47,17 @@ export type TweetActionRequest = {
   method?: "GET" | "POST";
   fieldToggles?: Record<string, unknown>;
 };
+
+export type FriendshipAction = "follow" | "unfollow";
+
+export type FriendshipRequest = {
+ action: FriendshipAction;
+ userId: string;
+ body: string;
+};
+
+export type FollowingListRequest = {
+  userId: string;
+  count?: number;
+  cursor?: string;
+};

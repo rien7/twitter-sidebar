@@ -6,11 +6,17 @@ import {
   INTERCEPTOR_EVENT_TYPE_DETAIL_ERROR,
   INTERCEPTOR_EVENT_TYPE_ACTION_RESPONSE,
   INTERCEPTOR_EVENT_TYPE_ACTION_ERROR,
+  INTERCEPTOR_EVENT_TYPE_FRIENDSHIP_RESPONSE,
+  INTERCEPTOR_EVENT_TYPE_FRIENDSHIP_ERROR,
+  INTERCEPTOR_EVENT_TYPE_FOLLOWING_LIST_RESPONSE,
+  INTERCEPTOR_EVENT_TYPE_FOLLOWING_LIST_ERROR,
 } from "@/common/bridge";
 import { TweetResponse } from "@/types/response";
 import { handleTimelineUpdate } from "./timelineUpdateHandler";
 import { handleDetailResponse } from "./tweetDetailHandler";
 import { handleActionResponse } from "@/api/twitterGraphql";
+import { handleFriendshipResponse } from "@/api/friendships";
+import { handleFollowingListResponse } from "@/api/followingList";
 
 export const registerBridgeMessageHandler = () => {
   const handleMessage = (event: MessageEvent) => {
@@ -32,6 +38,18 @@ export const registerBridgeMessageHandler = () => {
         break;
       case INTERCEPTOR_EVENT_TYPE_ACTION_ERROR:
         handleActionResponse(data.payload, true);
+        break;
+      case INTERCEPTOR_EVENT_TYPE_FRIENDSHIP_RESPONSE:
+        handleFriendshipResponse(data.payload, false);
+        break;
+      case INTERCEPTOR_EVENT_TYPE_FRIENDSHIP_ERROR:
+        handleFriendshipResponse(data.payload, true);
+        break;
+      case INTERCEPTOR_EVENT_TYPE_FOLLOWING_LIST_RESPONSE:
+        handleFollowingListResponse(data.payload, false);
+        break;
+      case INTERCEPTOR_EVENT_TYPE_FOLLOWING_LIST_ERROR:
+        handleFollowingListResponse(data.payload, true);
         break;
       default:
         break;
