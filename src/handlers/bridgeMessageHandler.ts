@@ -10,6 +10,9 @@ import {
   INTERCEPTOR_EVENT_TYPE_FRIENDSHIP_ERROR,
   INTERCEPTOR_EVENT_TYPE_FOLLOWING_LIST_RESPONSE,
   INTERCEPTOR_EVENT_TYPE_FOLLOWING_LIST_ERROR,
+  INTERCEPTOR_EVENT_TYPE_UPLOAD_RESPONSE,
+  INTERCEPTOR_EVENT_TYPE_UPLOAD_ERROR,
+  INTERCEPTOR_EVENT_TYPE_UPLOAD_PROGRESS,
 } from "@/common/bridge";
 import { TweetResponse } from "@/types/response";
 import { handleTimelineUpdate } from "./timelineUpdateHandler";
@@ -17,6 +20,11 @@ import { handleDetailResponse } from "./tweetDetailHandler";
 import { handleActionResponse } from "@/api/twitterGraphql";
 import { handleFriendshipResponse } from "@/api/friendships";
 import { handleFollowingListResponse } from "@/api/followingList";
+import {
+  handleUploadError,
+  handleUploadProgress,
+  handleUploadSuccess,
+} from "@/api/twitterUpload";
 
 export const registerBridgeMessageHandler = () => {
   const handleMessage = (event: MessageEvent) => {
@@ -50,6 +58,15 @@ export const registerBridgeMessageHandler = () => {
         break;
       case INTERCEPTOR_EVENT_TYPE_FOLLOWING_LIST_ERROR:
         handleFollowingListResponse(data.payload, true);
+        break;
+      case INTERCEPTOR_EVENT_TYPE_UPLOAD_PROGRESS:
+        handleUploadProgress(data.payload);
+        break;
+      case INTERCEPTOR_EVENT_TYPE_UPLOAD_RESPONSE:
+        handleUploadSuccess(data.payload);
+        break;
+      case INTERCEPTOR_EVENT_TYPE_UPLOAD_ERROR:
+        handleUploadError(data.payload);
         break;
       default:
         break;

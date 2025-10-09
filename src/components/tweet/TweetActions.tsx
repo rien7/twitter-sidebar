@@ -8,12 +8,29 @@ import {
   favoriteTweet,
   unfavoriteTweet,
 } from "@/api/twitterGraphql";
-import { TWEET_ACTION_ICONS } from "@/icons/TweetActionIcons";
 import { formatCount } from "@/components/tweet/tweetText";
 import type { TweetResult } from "@/types/response";
 import { requestTweetDetail } from "@/handlers/tweetDetailHandler";
+import {
+  ReplyIcon,
+  RetweetIcon,
+  LikeIcon,
+  LikeActiveIcon,
+  ViewIcon,
+  BookmarkIcon,
+  BookmarkActiveIcon,
+} from "@/icons/TweetActionIcons";
 
 type ActionKey = "reply" | "retweet" | "like" | "bookmark" | "view";
+const TWEET_ACTION_ICONS = {
+  reply: ReplyIcon,
+  retweet: RetweetIcon,
+  like: LikeIcon,
+  like_active: LikeActiveIcon,
+  view: ViewIcon,
+  bookmark: BookmarkIcon,
+  bookmark_active: BookmarkActiveIcon,
+} as const;
 
 type ActionCounts = {
   reply: number | null;

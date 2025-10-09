@@ -135,7 +135,13 @@ const TWEET_RESULT_BY_REST_ID_FIELD_TOGGLES: Record<string, boolean> = {
   withArticlePlainText: false,
 };
 
-const DEFAULT_REPLY_FEATURES: Record<string, boolean> = {
+/**
+ * Twitter GraphQL 推文相关接口默认需要启用的特性开关。
+ *
+ * 这些字段来自浏览器真实发起的 CreateTweet/Reply 请求，
+ * 如无特殊需求建议保持默认以确保服务端行为一致。
+ */
+const DEFAULT_TWEET_MUTATION_FEATURES: Record<string, boolean> = {
   premium_content_api_read_enabled: false,
   communities_web_enable_tweet_community_results_fetch: true,
   c9s_tweet_anatomy_moderator_badge_enabled: true,
@@ -201,7 +207,10 @@ export const fetchTweetResultByRestId = async (
   return (data ?? null) as TweetResultByRestIdResponse;
 };
 
-interface ReplyMediaEntityInput {
+/**
+ * 推文或回复中引用的媒体资源描述。
+ */
+interface TweetMediaEntityInput {
   media_id: string;
   tagged_users?: string[];
 }
@@ -212,13 +221,54 @@ interface CreateReplyParams {
   excludeReplyUserIds?: string[];
   batchCompose?: "BatchInitial" | "BatchSubsequent";
   darkRequest?: boolean;
-  mediaEntities?: ReplyMediaEntityInput[];
+  mediaEntities?: TweetMediaEntityInput[];
   possiblySensitive?: boolean;
   semanticAnnotationIds?: string[];
   disallowedReplyOptions?: unknown;
   featuresOverride?: Record<string, unknown>;
 }
 
+/**
+ * 构造 CreateTweet/Reply GraphQL 所需的基础字段。
+ */
+const buildTweetMutationVariables = ({
+  text,
+  batchCompose,
+  darkRequest,
+  mediaEntities,
+  possiblySensitive,
+  semanticAnnotationIds,
+  disallowedReplyOptions,
+}: {
+  text: string;
+  batchCompose: "BatchInitial" | "BatchSubsequent";
+  darkRequest: boolean;
+  mediaEntities: TweetMediaEntityInput[];
+  possiblySensitive: boolean;
+  semanticAnnotationIds: string[];
+  disallowedReplyOptions: unknown;
+}) => {
+  const variables: Record<string, unknown> = {
+    tweet_text: text,
+    batch_compose: batchCompose,
+    dark_request: darkRequest,
+    semantic_annotation_ids: semanticAnnotationIds,
+    disallowed_reply_options: disallowedReplyOptions,
+  };
+
+  if (mediaEntities.length > 0 || possiblySensitive) {
+    variables.media = {
+      media_entities: mediaEntities,
+      possibly_sensitive: possiblySensitive,
+    };
+  }
+
+  return variables;
+};
+
+/**
+ * 针对现有推文创建回复。
+ */
 export const createReply = ({
   tweetId,
   text,
@@ -236,28 +286,25 @@ export const createReply = ({
     throw new Error("回复内容不能为空");
   }
   const features = {
-    ...DEFAULT_REPLY_FEATURES,
+    ...DEFAULT_TWEET_MUTATION_FEATURES,
     ...(featuresOverride ?? {}),
   };
-  return sendTweetActionRequest(
-    "reply",
-    {
-      tweet_text: trimmed,
-      reply: {
-        in_reply_to_tweet_id: tweetId,
-        exclude_reply_user_ids: excludeReplyUserIds,
-      },
-      batch_compose: batchCompose,
-      dark_request: darkRequest,
-      media: {
-        media_entities: mediaEntities,
-        possibly_sensitive: possiblySensitive,
-      },
-      semantic_annotation_ids: semanticAnnotationIds,
-      disallowed_reply_options: disallowedReplyOptions,
-    },
-    { features }
-  );
+  const variables = buildTweetMutationVariables({
+    text: trimmed,
+    batchCompose,
+    darkRequest,
+    mediaEntities,
+    possiblySensitive,
+    semanticAnnotationIds,
+    disallowedReplyOptions,
+  });
+
+  variables.reply = {
+    in_reply_to_tweet_id: tweetId,
+    exclude_reply_user_ids: excludeReplyUserIds,
+  };
+
+  return sendTweetActionRequest("create_tweet", variables, { features });
 };
 
 export const favoriteTweet = (tweetId: string) =>

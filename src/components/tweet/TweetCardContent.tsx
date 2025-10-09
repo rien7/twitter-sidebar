@@ -115,7 +115,7 @@ export const TweetCardContent = ({
           tweet={tweet}
           className={cn(
             isReply && "pl-[3.25rem] py-0",
-            isMain && "border-twitter-divide-light border-b"
+            isMain && "border-twitter-divide-light border-t"
           )}
           expanded={composerOpen}
           onExpand={onComposerExpand}

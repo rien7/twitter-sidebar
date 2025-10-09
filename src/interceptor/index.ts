@@ -1,6 +1,7 @@
 import { postToContent } from "./messaging";
 import { performTweetActionRequest } from "./tweetActions";
 import { performTweetDetailRequest } from "./tweetDetailTemplate";
+import { performMediaUploadRequest } from "./mediaUpload";
 import { installXhrInterceptor } from "./xhrInterceptor";
 import { performFriendshipRequest } from "./friendships";
 import { performFollowingListRequest } from "./followingList";
@@ -9,6 +10,7 @@ import {
   CONTENT_EVENT_TYPE_DETAIL_REQUEST,
   CONTENT_EVENT_TYPE_FRIENDSHIP_REQUEST,
   CONTENT_EVENT_TYPE_FOLLOWING_LIST_REQUEST,
+  CONTENT_EVENT_TYPE_UPLOAD_REQUEST,
   EXT_BRIDGE_SOURCE,
   INTERCEPTOR_EVENT_TYPE_ACTION_ERROR,
   INTERCEPTOR_EVENT_TYPE_ACTION_RESPONSE,
@@ -89,6 +91,43 @@ window.addEventListener("message", async (event: MessageEvent) => {
     }
   }
 
+  if (data.type === CONTENT_EVENT_TYPE_UPLOAD_REQUEST) {
+    const payload = data.payload as {
+      requestId?: string;
+      file?: Blob;
+      mediaType?: string;
+      mediaCategory?: string;
+      fileName?: string;
+      chunkSizeBytes?: number;
+      additionalOwners?: string[];
+    };
+
+    if (
+      !payload?.requestId ||
+      !payload.file ||
+      !payload.mediaType ||
+      !payload.mediaCategory ||
+      !payload.fileName
+    ) {
+      return;
+    }
+
+    await performMediaUploadRequest({
+      requestId: payload.requestId,
+      file: payload.file,
+      mediaType: payload.mediaType,
+      mediaCategory: payload.mediaCategory,
+      fileName: payload.fileName,
+      chunkSizeBytes:
+        typeof payload.chunkSizeBytes === "number"
+          ? payload.chunkSizeBytes
+          : undefined,
+      additionalOwners: Array.isArray(payload.additionalOwners)
+        ? [...payload.additionalOwners]
+        : undefined,
+    });
+  }
+
   if (data.type === CONTENT_EVENT_TYPE_FRIENDSHIP_REQUEST) {
     const payload = data.payload as {
       requestId?: string;
@@ -96,7 +135,12 @@ window.addEventListener("message", async (event: MessageEvent) => {
       userId?: string;
       body?: string;
     };
-    if (!payload?.requestId || !payload.action || !payload.userId || !payload.body)
+    if (
+      !payload?.requestId ||
+      !payload.action ||
+      !payload.userId ||
+      !payload.body
+    )
       return;
 
     try {

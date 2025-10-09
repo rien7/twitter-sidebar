@@ -41,12 +41,15 @@ export const openTweetInSidebar = (tweetId: string): boolean => {
   return true;
 };
 
-const hydrateDetailInBackground = async (
+export const hydrateDetailInBackground = async (
   tweetId: string,
   controllerData: string | null
 ) => {
   try {
-    await requestTweetDetail(tweetId, controllerData ?? null);
+    if (controllerData === null) {
+      controllerData = getTweet(tweetId)?.controllerData ?? null;
+    }
+    await requestTweetDetail(tweetId, controllerData ?? null, true);
     if (sidebarStore.getState().tweetId !== tweetId) {
       return;
     }
@@ -62,7 +65,6 @@ const hydrateDetailInBackground = async (
     if (sidebarStore.getState().tweetId !== tweetId) {
       return;
     }
-    // Keep rendering the last successful snapshot; users can retry manually.
   }
 };
 

@@ -47,13 +47,3 @@ export const BookmarkIcon = createFilledIcon(() => (
 export const BookmarkActiveIcon = createFilledIcon(() => (
   <path d="M4 4.5C4 3.12 5.119 2 6.5 2h11C18.881 2 20 3.12 20 4.5v18.44l-8-5.71-8 5.71V4.5z" />
 ));
-
-export const TWEET_ACTION_ICONS = {
-  reply: ReplyIcon,
-  retweet: RetweetIcon,
-  like: LikeIcon,
-  like_active: LikeActiveIcon,
-  view: ViewIcon,
-  bookmark: BookmarkIcon,
-  bookmark_active: BookmarkActiveIcon,
-} as const;

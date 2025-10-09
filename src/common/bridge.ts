@@ -13,9 +13,13 @@ export const CONTENT_EVENT_TYPE_ACTION_REQUEST = "tweet-action:request";
 export const INTERCEPTOR_EVENT_TYPE_ACTION_RESPONSE = "tweet-action:response";
 export const INTERCEPTOR_EVENT_TYPE_ACTION_ERROR = "tweet-action:error";
 
+export const CONTENT_EVENT_TYPE_UPLOAD_REQUEST = "tweet-upload:request";
+export const INTERCEPTOR_EVENT_TYPE_UPLOAD_PROGRESS = "tweet-upload:progress";
+export const INTERCEPTOR_EVENT_TYPE_UPLOAD_RESPONSE = "tweet-upload:response";
+export const INTERCEPTOR_EVENT_TYPE_UPLOAD_ERROR = "tweet-upload:error";
+
 export const CONTENT_EVENT_TYPE_FRIENDSHIP_REQUEST = "friendship:request";
-export const INTERCEPTOR_EVENT_TYPE_FRIENDSHIP_RESPONSE =
-  "friendship:response";
+export const INTERCEPTOR_EVENT_TYPE_FRIENDSHIP_RESPONSE = "friendship:response";
 export const INTERCEPTOR_EVENT_TYPE_FRIENDSHIP_ERROR = "friendship:error";
 
 export const CONTENT_EVENT_TYPE_FOLLOWING_LIST_REQUEST =

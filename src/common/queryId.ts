@@ -1,7 +1,7 @@
 export type TweetQueryOperationKey =
   | "tweet_detail"
   | "tweet_result_by_rest_id"
-  | "reply"
+  | "create_tweet"
   | "favorite"
   | "unfavorite"
   | "retweet"
@@ -31,7 +31,7 @@ export const TWEET_QUERY_OPERATIONS: Record<
     operationName: "TweetResultByRestId",
     method: "GET",
   },
-  reply: {
+  create_tweet: {
     id: "ZSBCfCefJFumbPcLcwR64Q",
     operationName: "CreateTweet",
   },
