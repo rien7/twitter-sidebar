@@ -3,6 +3,8 @@ import { rm, copyFile } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
+import archiver from "archiver";
+import { createWriteStream } from "node:fs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -20,6 +22,7 @@ function run(command, args) {
 
 async function main() {
   await rm(path.join(root, "dist"), { recursive: true, force: true });
+  await rm(path.join(root, "dist.zip"), { force: true })
 
   run("pnpm", ["exec", "tsc", "-b"]);
   run("pnpm", ["exec", "vite", "build", "-c", "vite.content.config.ts"]);
@@ -34,7 +37,12 @@ async function main() {
     path.join(root, "dist/icon-128.png")
   );
 
-  console.log("Build complete: dist contains manifest.json, icon-128.png, content.js, intercept.js");
+  const output = createWriteStream(path.join(root, "dist.zip"));
+  const archive = archiver("zip", { zlib: { level: 9 } });
+
+  archive.pipe(output);
+  archive.directory(path.join(root, "dist"), false);
+  await archive.finalize();
 }
 
 main().catch((error) => {
