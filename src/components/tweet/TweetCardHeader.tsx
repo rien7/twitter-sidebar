@@ -4,6 +4,11 @@ import { cn } from "@/utils/cn";
 import { renderWithTwemoji } from "@/utils/twemoji";
 import type { TweetResult } from "@/types/response";
 import type { CSSProperties, RefObject } from "react";
+import { getBlueVerified, getProtected } from "@/utils/responseData";
+import {
+  BlueVerifiedIcon,
+  ProtectedIcon,
+} from "@/icons/UserBlueAndProtectedIcons";
 
 interface TweetCardHeaderProps {
   tweet: TweetResult;
@@ -19,7 +24,7 @@ interface TweetCardHeaderProps {
   onOpenInNewTab: () => void;
   avatarRef: RefObject<HTMLImageElement | null>;
   userAvatarRef: RefObject<HTMLAnchorElement | null>;
-  userNameRef: RefObject<HTMLElement | null>;
+  userNameRef: RefObject<HTMLDivElement | null>;
   userHandleRef: RefObject<HTMLElement | null>;
 }
 
@@ -49,7 +54,8 @@ export const TweetCardHeader = ({
   );
   const headerClass = cn(
     "flex ml-2 flex-nowrap",
-    isReply ? "items-start" : "items-center gap-1 w-full min-w-0 flex-1",
+    isReply && "items-start",
+    isQuote && "items-center gap-1 w-full min-w-0 flex-1",
     isMain && "flex-col items-start gap-0"
   );
   const nameClass = cn(
@@ -66,6 +72,8 @@ export const TweetCardHeader = ({
   );
   const handleStyle = { fontFeatureSettings: '"ss01"' } as CSSProperties;
   const user = tweet.core?.user_results?.result;
+  const isBlueVerified = getBlueVerified(user);
+  const isProtected = getProtected(user);
 
   return (
     <div className="flex w-full items-center justify-between">
@@ -92,9 +100,13 @@ export const TweetCardHeader = ({
           </a>
         </UserHoverCard>
         <div className={headerClass}>
-          <UserHoverCard user={user}>
-            <span ref={userNameRef} className={nameClass}>
-              {renderWithTwemoji(name)}
+          <UserHoverCard user={user} ref={userNameRef} className="items-center">
+            <span className={nameClass}>{renderWithTwemoji(name)}</span>
+            <span className="inline-flex ml-0.5 items-center justify-center h-5 gap-0.5">
+              {isProtected ? (
+                <ProtectedIcon className="fill-twitter-text-primary" />
+              ) : undefined}
+              {isBlueVerified ? <BlueVerifiedIcon /> : undefined}
             </span>
           </UserHoverCard>
           <UserHoverCard user={user}>

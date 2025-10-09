@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { ReactNode } from "react";
+import type { ReactNode, RefObject } from "react";
 import type { UrlEntity, UserResult } from "@/types/response";
 import { cn } from "@/utils/cn";
 import { followUser, unfollowUser } from "@/api/friendships";
@@ -14,6 +14,7 @@ const formatter = new Intl.NumberFormat("zh-CN");
 type UserHoverCardProps = {
   user?: UserResult | null;
   children: ReactNode;
+  ref?: RefObject<HTMLDivElement | null>;
   className?: string;
   placement?: "left" | "right";
 };
@@ -103,6 +104,7 @@ const UserHoverCard = ({
   user,
   children,
   className,
+  ref,
   placement = "left",
 }: UserHoverCardProps) => {
   const [open, setOpen] = useState(false);
@@ -233,6 +235,7 @@ const UserHoverCard = ({
 
   return (
     <div
+      ref={ref}
       className={cn("relative inline-flex", className)}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}

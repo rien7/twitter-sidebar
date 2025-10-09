@@ -137,6 +137,16 @@ export function getAvatarFromUser(user?: UserResult | null): string | null {
   );
 }
 
+export function getBlueVerified(user: UserResult | null | undefined) {
+  if (user?.is_blue_verified) return true;
+  return false;
+}
+
+export function getProtected(user: UserResult | null | undefined) {
+  if (user?.privacy?.protected) return true;
+  return false;
+}
+
 export function getTweetFromResultResponse(
   response: TweetResultByRestIdResponse | null | undefined
 ): TweetResult | null {
