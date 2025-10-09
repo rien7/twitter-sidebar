@@ -4,12 +4,16 @@ import {
   TimelineModuleContent,
   TweetResponse,
   TweetResult,
+  TweetTombstone,
+  TweetWithVisibilityResults,
 } from "@/types/response";
 
 type TimelineItemContentLike = {
   entryType?: string;
   itemContent?: {
-    tweet_results?: { result?: TweetResult };
+    tweet_results?: {
+      result?: TweetResult | TweetWithVisibilityResults | TweetTombstone;
+    };
   };
   clientEventInfo?: Entry["clientEventInfo"];
 };

@@ -1,12 +1,53 @@
 import { MediaOverlayItem } from "@/types/mediaOverlay";
 import {
   MediaEntity,
+  TweetLimitedAction,
   TweetResult,
   TweetResultByRestIdResponse,
   TweetTombstone,
+  TweetWithVisibilityResults,
   UserResult,
 } from "@/types/response";
 import { getHighResolutionUrl, selectVideoVariant } from "./media";
+
+export type NormalizedTweetResult = {
+  tweet: TweetResult;
+  limitedActions?: TweetLimitedAction[] | null;
+};
+
+export function normalizeTweetResult(
+  value: unknown
+): NormalizedTweetResult | null {
+  if (!value || typeof value !== "object") return null;
+
+  if (
+    (value as TweetResult).__typename === "Tweet" &&
+    getTweetIdFromTweet(value as TweetResult)
+  ) {
+    return { tweet: value as TweetResult, limitedActions: undefined };
+  }
+
+  const visibilityWrapper = value as TweetWithVisibilityResults;
+  if (visibilityWrapper?.__typename === "TweetWithVisibilityResults") {
+    const inner = visibilityWrapper.tweet;
+    if (inner && getTweetIdFromTweet(inner as TweetResult)) {
+      return {
+        tweet: inner as TweetResult,
+        limitedActions:
+          visibilityWrapper.limitedActionResults?.limited_actions ?? null,
+      };
+    }
+  }
+
+  return null;
+}
+
+export function unwrapTweetResult(
+  value: TweetResult | TweetWithVisibilityResults | null | undefined
+): TweetResult | null {
+  const normalized = normalizeTweetResult(value);
+  return normalized?.tweet ?? null;
+}
 
 export function isTweetResult(value: unknown): value is TweetResult {
   return Boolean(
@@ -156,7 +197,8 @@ export function getTweetFromResultResponse(
     response.data.tweetResultByRestId?.result ??
     response.data.tweet?.result ??
     null;
-  return isTweetResult(candidate) ? candidate : null;
+  const normalized = normalizeTweetResult(candidate);
+  return normalized?.tweet ?? null;
 }
 
 export function selectControllerData(

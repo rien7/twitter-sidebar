@@ -7,12 +7,12 @@ import {
   TWEET_USER_NAME_SELECTOR,
   TWEET_STATUS_A_SELECTOR,
 } from "@/constants/domSelectors";
-import { TweetResult } from "@/types/response";
+import { TweetResult, TweetWithVisibilityResults } from "@/types/response";
 import {
   getTweetIdFromTweet,
   getUserFromTweet,
   getUserIdFromTweet,
-  isTweetResult,
+  unwrapTweetResult,
 } from "./responseData";
 import { TweetContext } from "@/types/sidebar";
 import { getTweet, resolveTweet, storeTweet } from "@/store/tweetsStore";
@@ -62,18 +62,24 @@ const extractQuotedTweet = (
   tweet: TweetResult | null | undefined
 ): TweetResult | null => {
   if (!tweet) return null;
-  const direct =
-    (tweet.quoted_status_result?.result?.__typename === "Tweet"
-      ? (tweet.quoted_status_result.result as TweetResult)
-      : undefined) ?? null;
+  const directWrapper = tweet.quoted_status_result?.result as
+    | TweetResult
+    | TweetWithVisibilityResults
+    | undefined;
+  const direct = unwrapTweetResult(directWrapper);
   if (direct) return direct;
 
   const legacy = tweet.legacy as
     | { quoted_status_result?: { result?: TweetResult | null } }
     | undefined;
-  const legacyResult = legacy?.quoted_status_result?.result ?? null;
-  if (legacyResult && isTweetResult(legacyResult)) {
-    return legacyResult;
+  const legacyResult = legacy?.quoted_status_result?.result as
+    | TweetResult
+    | TweetWithVisibilityResults
+    | null
+    | undefined;
+  const legacyTweet = unwrapTweetResult(legacyResult ?? undefined);
+  if (legacyTweet) {
+    return legacyTweet;
   }
 
   return null;

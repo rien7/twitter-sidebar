@@ -1,12 +1,18 @@
 import {
   Instruction,
   TimelineModuleContent,
+  TweetLimitedAction,
   TweetResponse,
   TweetResult,
   TweetTombstone,
+  TweetWithVisibilityResults,
 } from "@/types/response";
 import { TweetData, TweetRelation } from "@/types/tweet";
-import { getTweetIdFromTweet, isTweetResult } from "@/utils/responseData";
+import {
+  getTweetIdFromTweet,
+  NormalizedTweetResult,
+  normalizeTweetResult,
+} from "@/utils/responseData";
 import { rememberUserAvatarFromTweet } from "./avatarStore";
 
 const tweetsStore = new Map<string, TweetData>();
@@ -33,16 +39,22 @@ const deletedTweetStore = new Map<string, DeletedTweetData>();
 export function storeTweet(
   tweet: TweetResult,
   controllerData: string | null,
-  refreshRelation: boolean = false
+  refreshRelation: boolean = false,
+  limitedActions?: TweetLimitedAction[] | null
 ) {
   const tweetId = getTweetIdFromTweet(tweet);
   if (!tweetId) return;
   const previous = tweetsStore.get(tweetId);
   const resolvedControllerData =
     controllerData ?? previous?.controllerData ?? null;
+  const resolvedLimitedActions =
+    limitedActions === undefined
+      ? previous?.limitedActions ?? null
+      : limitedActions ?? null;
   tweetsStore.set(tweetId, {
     result: tweet,
     controllerData: resolvedControllerData,
+    limitedActions: resolvedLimitedActions ?? null,
   });
   rememberUserAvatarFromTweet(tweet);
   analyzeAndCreateRelations(tweet, refreshRelation);
@@ -61,27 +73,39 @@ export function resolveTweet(tweetId: string): TweetData | null {
   if (cached) return cached;
 
   for (const candidate of tweetsStore.values()) {
-    const retweeted =
-      (candidate.result.retweeted_status_result?.result?.__typename === "Tweet"
-        ? (candidate.result.retweeted_status_result.result as TweetResult)
-        : undefined) ??
-      ((
+    const directRetweeted = normalizeTweetResult(
+      candidate.result.retweeted_status_result?.result
+    );
+    const legacyRetweeted = normalizeTweetResult(
+      (
         candidate.result.legacy as
-          | { retweeted_status_result?: { result?: TweetResult } }
+          | {
+              retweeted_status_result?: {
+                result?: TweetResult | TweetWithVisibilityResults;
+              };
+            }
           | undefined
-      )?.retweeted_status_result?.result as TweetResult | undefined);
+      )?.retweeted_status_result?.result
+    );
+    const retweetedNormalized = directRetweeted ?? legacyRetweeted;
 
-    if (!retweeted || !isTweetResult(retweeted)) {
+    if (!retweetedNormalized) {
       continue;
     }
 
+    const retweeted = retweetedNormalized.tweet;
     const retweetedId = getTweetIdFromTweet(retweeted);
     if (!retweetedId || retweetedId !== tweetId) {
       continue;
     }
 
     const controller = candidate.controllerData ?? null;
-    storeTweet(retweeted, controller);
+    storeTweet(
+      retweeted,
+      controller,
+      false,
+      retweetedNormalized.limitedActions ?? undefined
+    );
     return tweetsStore.get(tweetId) ?? null;
   }
 
@@ -112,7 +136,7 @@ export function clearTweetDetail(tweetId: string) {
 export function extractTweetFromDetail(
   detail: TweetResponse | undefined,
   tweetId: string
-): TweetResult | undefined {
+): NormalizedTweetResult | undefined {
   if (!detail) return undefined;
   const instructions = (detail.data?.threaded_conversation_with_injections_v2
     ?.instructions ?? []) as Instruction[];
@@ -126,13 +150,28 @@ export function extractTweetFromDetail(
           (
             entry.content as
               | {
-                  itemContent?: { tweet_results?: { result?: TweetResult } };
+                  itemContent?: {
+                    tweet_results?: {
+                      result?:
+                        | TweetResult
+                        | TweetWithVisibilityResults
+                        | TweetTombstone;
+                    };
+                  };
                 }
               | null
               | undefined
-          )?.itemContent?.tweet_results as { result?: TweetResult } | undefined
+          )?.itemContent?.tweet_results as
+            | {
+                result?:
+                  | TweetResult
+                  | TweetWithVisibilityResults
+                  | TweetTombstone;
+              }
+            | undefined
         )?.result;
-        if (isTweetResult(direct)) return direct;
+        const normalizedDirect = normalizeTweetResult(direct);
+        if (normalizedDirect) return normalizedDirect;
       }
 
       const content = entry.content as TimelineModuleContent | undefined;
@@ -140,18 +179,32 @@ export function extractTweetFromDetail(
         (
           content as
             | {
-                itemContent?: { tweet_results?: { result?: TweetResult } };
+                itemContent?: {
+                  tweet_results?: {
+                    result?:
+                      | TweetResult
+                      | TweetWithVisibilityResults
+                      | TweetTombstone;
+                  };
+                };
               }
             | null
             | undefined
-        )?.itemContent?.tweet_results as { result?: TweetResult } | undefined
+        )?.itemContent?.tweet_results as
+          | {
+              result?:
+                | TweetResult
+                | TweetWithVisibilityResults
+                | TweetTombstone;
+            }
+          | undefined
       )?.result;
+      const normalizedInline = normalizeTweetResult(inlineTweet);
       if (
-        inlineTweet &&
-        isTweetResult(inlineTweet) &&
-        getTweetIdFromTweet(inlineTweet) === tweetId
+        normalizedInline &&
+        getTweetIdFromTweet(normalizedInline.tweet) === tweetId
       ) {
-        return inlineTweet;
+        return normalizedInline;
       }
 
       if (content && Array.isArray(content.items)) {
@@ -162,15 +215,20 @@ export function extractTweetFromDetail(
           const tweet =
             (
               item?.item?.itemContent?.tweet_results as
-                | { result?: TweetResult }
+                | {
+                    result?:
+                      | TweetResult
+                      | TweetWithVisibilityResults
+                      | TweetTombstone;
+                  }
                 | undefined
             )?.result ?? undefined;
+          const normalizedNested = normalizeTweetResult(tweet);
           if (
-            tweet &&
-            isTweetResult(tweet) &&
-            getTweetIdFromTweet(tweet) === tweetId
+            normalizedNested &&
+            getTweetIdFromTweet(normalizedNested.tweet) === tweetId
           ) {
-            return tweet;
+            return normalizedNested;
           }
         }
       }
@@ -183,10 +241,15 @@ export function applyDetailToTweetCache(
   tweetId: string,
   detail: TweetResponse
 ) {
-  const tweet = extractTweetFromDetail(detail, tweetId);
-  if (!tweet) return;
+  const normalized = extractTweetFromDetail(detail, tweetId);
+  if (!normalized) return;
   const existing = tweetsStore.get(tweetId);
-  storeTweet(tweet, existing?.controllerData ?? null, true);
+  storeTweet(
+    normalized.tweet,
+    existing?.controllerData ?? null,
+    true,
+    normalized.limitedActions ?? undefined
+  );
 }
 
 export function storeDeletedTweet(
@@ -223,25 +286,51 @@ function analyzeAndCreateRelations(
   if (replyToId) addBidirectionalRelation(tweetId, replyToId, "reply");
 
   // 处理引用关系
-  const quotedTweet = tweet.quoted_status_result?.result;
-  if (quotedTweet && isTweetResult(quotedTweet)) {
+  const quotedNormalized = normalizeTweetResult(
+    tweet.quoted_status_result?.result
+  );
+  if (quotedNormalized) {
+    const quotedTweet = quotedNormalized.tweet;
     const quotedId = getTweetIdFromTweet(quotedTweet);
     if (quotedId) {
       addBidirectionalRelation(tweetId, quotedId, "quote");
-      storeTweet(quotedTweet, null);
+      storeTweet(
+        quotedTweet,
+        null,
+        false,
+        quotedNormalized.limitedActions ?? undefined
+      );
     }
   }
 
   // 处理转推关系
-  const retweetedTweet =
-    tweet.retweeted_status_result?.result ||
-    tweet.legacy?.retweeted_status_result?.result;
-  if (retweetedTweet && isTweetResult(retweetedTweet)) {
+  const directRetweeted = normalizeTweetResult(
+    tweet.retweeted_status_result?.result
+  );
+  const legacyRetweeted = normalizeTweetResult(
+    (
+      tweet.legacy as
+        | {
+            retweeted_status_result?: {
+              result?: TweetResult | TweetWithVisibilityResults;
+            };
+          }
+        | undefined
+    )?.retweeted_status_result?.result
+  );
+  const retweetedNormalized = directRetweeted ?? legacyRetweeted;
+  if (retweetedNormalized) {
+    const retweetedTweet = retweetedNormalized.tweet;
     const retweetedId = getTweetIdFromTweet(retweetedTweet);
     if (retweetedId) {
       addBidirectionalRelation(tweetId, retweetedId, "retweet");
       // 递归处理被转推的推文
-      storeTweet(retweetedTweet, null);
+      storeTweet(
+        retweetedTweet,
+        null,
+        false,
+        retweetedNormalized.limitedActions ?? undefined
+      );
     }
   }
 }

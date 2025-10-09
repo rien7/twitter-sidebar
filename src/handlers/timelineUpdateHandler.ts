@@ -5,11 +5,12 @@ import {
   ItemContent,
   TweetResult,
   TweetTombstone,
+  TweetWithVisibilityResults,
 } from "@/types/response";
 import {
   getTweetIdFromTweet,
-  isTweetResult,
   isTweetTombstone,
+  normalizeTweetResult,
   selectControllerData,
 } from "@/utils/responseData";
 import {
@@ -29,7 +30,7 @@ const extractTweetIdFromEntry = (entryId: string | undefined) => {
 };
 
 const handleTweetLikeResult = (
-  result: TweetResult | TweetTombstone | undefined,
+  result: TweetResult | TweetWithVisibilityResults | TweetTombstone | undefined,
   context: TimelineContext,
   options: {
     entryId?: string;
@@ -39,13 +40,16 @@ const handleTweetLikeResult = (
 ) => {
   if (!result) return;
 
-  if (isTweetResult(result)) {
+  const normalized = normalizeTweetResult(result);
+
+  if (normalized) {
     storeTweet(
-      result,
+      normalized.tweet,
       options.controllerData ?? null,
-      options.refreshRelation ?? false
+      options.refreshRelation ?? false,
+      normalized.limitedActions ?? undefined
     );
-    const tweetId = getTweetIdFromTweet(result);
+    const tweetId = getTweetIdFromTweet(normalized.tweet);
     if (tweetId) {
       context.lastActualTweetId = tweetId;
     }
@@ -71,7 +75,7 @@ const processTimelineEntry = (
   if (isTimelineItemContent(content)) {
     const result = (
       content.itemContent?.tweet_results as {
-        result?: TweetResult | TweetTombstone;
+        result?: TweetResult | TweetWithVisibilityResults | TweetTombstone;
       } | null
     )?.result;
 
@@ -96,7 +100,7 @@ const processTimelineEntry = (
     const nestedItemContent = item.item?.itemContent as ItemContent | undefined;
     const result = (
       nestedItemContent?.tweet_results as {
-        result?: TweetResult | TweetTombstone;
+        result?: TweetResult | TweetWithVisibilityResults | TweetTombstone;
       } | null
     )?.result;
 

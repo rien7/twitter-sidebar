@@ -49,6 +49,7 @@ type ActionActives = {
 interface TweetActionsProps {
   tweet: TweetResult;
   size?: "sm" | "md";
+  disanleAction?: Set<"reply" | "retweet">;
   onReplyBtnClick: () => void;
   className?: string;
 }
@@ -71,6 +72,7 @@ const TweetActions = ({
   tweet,
   size = "md",
   onReplyBtnClick,
+  disanleAction,
   className,
 }: TweetActionsProps) => {
   const tweetId = tweet.rest_id ?? tweet.legacy?.id_str;
@@ -145,7 +147,7 @@ const TweetActions = ({
       } else {
         await deleteRetweet(tweetId);
       }
-      requestTweetDetail(tweetId, null, true)
+      requestTweetDetail(tweetId, null, true);
     } catch (error) {
       console.error("[TSB][TweetActions] 转推失败", error);
       setActives((previous) => ({ ...previous, retweet: previousActive }));
@@ -176,7 +178,7 @@ const TweetActions = ({
       } else {
         await unfavoriteTweet(tweetId);
       }
-      requestTweetDetail(tweetId, null, true)
+      requestTweetDetail(tweetId, null, true);
     } catch (error) {
       console.error("[TSB][TweetActions] 点赞失败", error);
       setActives((previous) => ({ ...previous, like: previousActive }));
@@ -207,7 +209,7 @@ const TweetActions = ({
       } else {
         await deleteBookmark(tweetId);
       }
-      requestTweetDetail(tweetId, null, true)
+      requestTweetDetail(tweetId, null, true);
     } catch (error) {
       console.error("[TSB][TweetActions] 收藏失败", error);
       setActives((previous) => ({ ...previous, bookmark: previousActive }));
@@ -241,6 +243,7 @@ const TweetActions = ({
     label: string;
     color: { r: number; g: number; b: number };
     count?: number | null;
+    disable?: boolean;
     active?: boolean | null;
   }> = [
     {
@@ -248,6 +251,7 @@ const TweetActions = ({
       label: "回复",
       color: { r: 29, g: 155, b: 240 },
       count: counts.reply,
+      disable: disanleAction?.has("reply"),
     },
     {
       key: "retweet",
@@ -255,6 +259,7 @@ const TweetActions = ({
       color: { r: 0, g: 186, b: 124 },
       count: counts.retweet,
       active: actives.retweet,
+      disable: disanleAction?.has("retweet"),
     },
     {
       key: "like",
@@ -312,11 +317,12 @@ const TweetActions = ({
           action.key === "like" ||
           action.key === "bookmark";
         const isDisabled =
-          isToggle &&
-          pendingAction !== null &&
-          (pendingAction === "retweet" ||
-            pendingAction === "like" ||
-            pendingAction === "bookmark");
+          action.disable ||
+          (isToggle &&
+            pendingAction !== null &&
+            (pendingAction === "retweet" ||
+              pendingAction === "like" ||
+              pendingAction === "bookmark"));
         const isPending = pendingAction === action.key;
 
         return (
@@ -324,8 +330,9 @@ const TweetActions = ({
             key={action.key}
             type="button"
             className={cn(
-              "group relative flex items-center min-h-5 hover:text-(--accent-rgb)",
+              "group relative flex items-center min-h-5 hover:text-(--accent-rgb) disabled:hover:text-twitter-text-secondary",
               sizeClasses,
+              action.disable && "opacity-50",
               active
                 ? "text-(--accent-rgb)"
                 : "text-twitter-text-secondary dark:text-twitter-dark-text-secondary"
@@ -343,7 +350,7 @@ const TweetActions = ({
           >
             <div className="inline-flex items-center">
               <div className="relative inline-flex">
-                <span className="absolute inset-0 bottom-0 left-0 right-0 top-0 -m-2 rounded-full bg-(--accent-rgba) opacity-0 transition-opacity group-hover:opacity-100" />
+                <span className="absolute inset-0 bottom-0 left-0 right-0 top-0 -m-2 rounded-full bg-(--accent-rgba) group-disabled:bg-transparent opacity-0 transition-opacity group-hover:opacity-100" />
                 <Icon size={sizeValue} />
               </div>
               {shouldShowCount ? (

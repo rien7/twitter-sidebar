@@ -1,14 +1,20 @@
-import { Fragment, RefObject, type ReactNode } from "react";
+import { Fragment, RefObject, type ReactNode, useMemo } from "react";
 import CardPreview from "@/components/tweet/CardPreview";
 import MediaGallery from "@/components/tweet/MediaGallery";
 import TweetActions from "@/components/tweet/TweetActions";
 import ReplyComposer, { ReplyComposerHandle } from "../ReplyComposer";
-import type { MediaEntity, TweetResult } from "@/types/response";
+import type {
+  MediaEntity,
+  TweetLimitedAction,
+  TweetResult,
+} from "@/types/response";
 import type { TweetCardInfo } from "@/components/tweet/tweetText";
 import { cn } from "@/utils/cn";
+import { getProtected, getUserFromTweet } from "@/utils/responseData";
 
 interface TweetCardContentProps {
   tweet: TweetResult;
+  limitedActions?: TweetLimitedAction[] | null;
   isMain: boolean;
   isReply: boolean;
   isQuote: boolean;
@@ -33,6 +39,7 @@ interface TweetCardContentProps {
 
 export const TweetCardContent = ({
   tweet,
+  limitedActions,
   isMain,
   isReply,
   isQuote,
@@ -65,6 +72,23 @@ export const TweetCardContent = ({
     isQuote && "z-10"
   );
   const galleryVariant = isMain ? "main" : "quote";
+  const isProtected = getProtected(getUserFromTweet(tweet));
+  const disabledActions = useMemo(() => {
+    const disabled = new Set<"reply" | "retweet">();
+    if (isProtected) {
+      disabled.add("retweet");
+    }
+    if (
+      limitedActions?.some(
+        (action) =>
+          typeof action?.action === "string" &&
+          action.action.toLowerCase() === "reply"
+      )
+    ) {
+      disabled.add("reply");
+    }
+    return disabled.size > 0 ? disabled : undefined;
+  }, [isProtected, limitedActions]);
 
   return (
     <>
@@ -106,6 +130,7 @@ export const TweetCardContent = ({
           tweet={tweet}
           size={isMain ? "md" : "sm"}
           onReplyBtnClick={onToggleComposer}
+          disanleAction={disabledActions}
           className={cn(isReply && "ml-11 pl-2")}
         />
       ) : null}

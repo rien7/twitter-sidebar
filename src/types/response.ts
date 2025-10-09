@@ -136,8 +136,36 @@ export interface ItemContent {
 
 /* ---------------------------- Tweet Core -------------------------- */
 
+export interface TweetLimitedActionPromptText {
+  text?: string;
+  entities?: unknown[];
+}
+
+export interface TweetLimitedActionPrompt {
+  __typename?: string;
+  cta_type?: string;
+  headline?: TweetLimitedActionPromptText;
+  subtext?: TweetLimitedActionPromptText;
+}
+
+export interface TweetLimitedAction {
+  action?: string;
+  prompt?: TweetLimitedActionPrompt;
+}
+
+export interface TweetLimitedActionResults {
+  limited_actions?: TweetLimitedAction[];
+}
+
+export interface TweetWithVisibilityResults {
+  __typename: "TweetWithVisibilityResults";
+  tweet?: TweetResult;
+  limitedActionResults?: TweetLimitedActionResults;
+  [k: string]: unknown;
+}
+
 export type TweetResults = {
-  result?: TweetResult | TweetTombstone;
+  result?: TweetResult | TweetWithVisibilityResults | TweetTombstone;
 };
 
 export interface TweetTombstone {
@@ -192,9 +220,13 @@ export interface TweetResult {
   grok_analysis_button?: boolean;
 
   /* —— 被引用的推文 —— */
-  quoted_status_result?: { result?: TweetResult };
+  quoted_status_result?: {
+    result?: TweetResult | TweetWithVisibilityResults;
+  };
   /** —— 被转推的原文 —— */
-  retweeted_status_result?: { result?: TweetResult };
+  retweeted_status_result?: {
+    result?: TweetResult | TweetWithVisibilityResults;
+  };
 
   /* —— GraphQL 风格扩展：legacy 字段包含绝大部分“旧”结构 —— */
   legacy?: LegacyTweet;

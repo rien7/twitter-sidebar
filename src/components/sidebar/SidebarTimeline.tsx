@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import TweetCard from "@/components/tweet/TweetCard";
 import DeletedTweetCard from "@/components/tweet/DeletedTweetCard";
-import type { TweetResult } from "@/types/response";
+import type { TweetLimitedAction, TweetResult } from "@/types/response";
 import type { SidebarTweetStatus } from "@/types/sidebar";
 import { TweetData, TweetRelation } from "@/types/tweet";
 import {
@@ -33,6 +33,7 @@ type TimelineTweetItem = {
   linkBottom?: boolean;
   controllerData?: string | null;
   isAncestor?: boolean;
+  limitedActions?: TweetLimitedAction[] | null;
 };
 
 type TimelineDeletedItem = {
@@ -110,6 +111,7 @@ const useTimelineItems = (
           linkTop: index > 0,
           linkBottom: true,
           isAncestor: true,
+          limitedActions: ancestor.data.limitedActions ?? null,
         });
         return;
       }
@@ -135,6 +137,7 @@ const useTimelineItems = (
         variant: "main",
         linkTop: ancestorTweets.length > 0,
         controllerData: tweet.controllerData ?? null,
+        limitedActions: tweet.limitedActions ?? null,
       });
     }
 
@@ -166,6 +169,7 @@ const useTimelineItems = (
               linkTop,
               linkBottom,
               controllerData: node.controllerData ?? null,
+              limitedActions: node.limitedActions ?? null,
             });
             return;
           }
@@ -230,6 +234,7 @@ export const SidebarTimeline = ({
               controllerData={item.controllerData ?? null}
               onSelect={onSelectTweet}
               showDivider={showDivider}
+              limitedActions={item.limitedActions ?? null}
             />
           );
         }

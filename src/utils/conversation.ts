@@ -1,3 +1,4 @@
+import { normalizeTweetResult } from "@/utils/responseData";
 import type {
   ConversationSection,
   ConversationThread,
@@ -6,6 +7,8 @@ import type {
   TweetResponse,
   Entry,
   TweetResult,
+  TweetTombstone,
+  TweetWithVisibilityResults,
 } from "@/types/response";
 
 const isConversationModule = (
@@ -22,11 +25,14 @@ const extractTweetsFromModule = (
   const tweets: TweetResult[] = [];
   module.items?.forEach((item) => {
     const tweet = item?.item?.itemContent?.tweet_results as {
-      result?: TweetResult;
+      result?:
+        | TweetResult
+        | TweetWithVisibilityResults
+        | TweetTombstone;
     } | null;
-    const result = tweet?.result;
-    if (result && result.__typename === "Tweet") {
-      tweets.push(result);
+    const normalized = normalizeTweetResult(tweet?.result);
+    if (normalized) {
+      tweets.push(normalized.tweet);
     }
   });
   return tweets;

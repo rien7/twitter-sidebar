@@ -1,4 +1,4 @@
-import { TweetResult } from "./response";
+import { TweetResult, TweetLimitedAction } from "./response";
 
 export interface TweetRelation {
   replies?: Set<string>;
@@ -12,4 +12,5 @@ export interface TweetRelation {
 export interface TweetData {
   result: TweetResult;
   controllerData: string | null;
+  limitedActions?: TweetLimitedAction[] | null;
 }

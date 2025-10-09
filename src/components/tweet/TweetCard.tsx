@@ -18,7 +18,7 @@ import {
   useState,
 } from "react";
 import type { MouseEvent as ReactMouseEvent } from "react";
-import type { TweetResult } from "@/types/response";
+import type { TweetLimitedAction, TweetResult } from "@/types/response";
 import { useFlip } from "@/hooks/useFlip";
 import { useSidebarRoot } from "@/context/sidebarRoot";
 import { cn } from "@/utils/cn";
@@ -62,6 +62,7 @@ interface TweetCardProps {
   linkBottom?: boolean;
   controllerData?: string | null;
   showDivider?: boolean;
+  limitedActions?: TweetLimitedAction[] | null;
 }
 
 const TweetCard = ({
@@ -72,6 +73,7 @@ const TweetCard = ({
   linkBottom = false,
   controllerData,
   showDivider,
+  limitedActions,
 }: TweetCardProps) => {
   const { name, screenName } = extractName(tweet);
   const articleRef = useRef<HTMLElement | null>(null);
@@ -141,6 +143,7 @@ const TweetCard = ({
         tweet={quotedTweet}
         variant="quote"
         controllerData={controllerData}
+        limitedActions={null}
       />
     </div>
   ) : null;
@@ -323,6 +326,7 @@ const TweetCard = ({
           />
           <TweetCardContent
             tweet={tweet}
+            limitedActions={limitedActions ?? null}
             isMain={isMain}
             isReply={isReply}
             isQuote={isQuote}
