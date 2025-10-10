@@ -53,19 +53,19 @@ export const TweetCardHeader = ({
     isQuote && "z-10"
   );
   const headerClass = cn(
-    "flex ml-2 flex-nowrap",
+    "flex ml-2 flex-nowrap min-w-0",
     isReply && "items-start",
-    isQuote && "items-center gap-1 w-full min-w-0 flex-1",
+    isQuote && "items-center gap-1 w-full flex-1",
     isMain && "flex-col items-start gap-0"
   );
   const nameClass = cn(
-    "text-twitter-text-primary dark:text-twitter-dark-text-primary grow-0 overflow-hidden overflow-ellipsis text-nowrap",
+    "text-twitter-text-primary dark:text-twitter-dark-text-primary grow-0 min-w-0 overflow-hidden overflow-ellipsis text-nowrap flex-shrink-2",
     transitionClass,
     isMain ? "text-[17px] font-bold" : "text-[15px] font-semibold",
     isQuote && "z-10"
   );
   const handleClass = cn(
-    "text-twitter-text-secondary dark:text-twitter-dark-text-secondary text-[15px] flex-shrink-0",
+    "text-twitter-text-secondary dark:text-twitter-dark-text-secondary text-[15px] flex-shrink-1",
     transitionClass,
     (isReply || isQuote) && "ml-1",
     isQuote && "z-10"
@@ -100,9 +100,13 @@ export const TweetCardHeader = ({
           </a>
         </UserHoverCard>
         <div className={headerClass}>
-          <UserHoverCard user={user} ref={userNameRef} className="items-center">
+          <UserHoverCard
+            user={user}
+            ref={userNameRef}
+            className="items-center min-w-0"
+          >
             <span className={nameClass}>{renderWithTwemoji(name)}</span>
-            <span className="inline-flex ml-0.5 items-center justify-center h-5 gap-0.5">
+            <span className="inline-flex ml-0.5 items-center justify-center h-5 gap-0.5 shrink-0">
               {isProtected ? (
                 <ProtectedIcon className="fill-twitter-text-primary" />
               ) : undefined}
@@ -119,7 +123,7 @@ export const TweetCardHeader = ({
             </span>
           </UserHoverCard>
           {showTimestampInHeader ? (
-            <span className="text-twitter-text-secondary dark:text-twitter-dark-text-secondary ml-1">
+            <span className="text-twitter-text-secondary dark:text-twitter-dark-text-secondary ml-1 shrink-0">
               <span className="mr-1">·</span>
               <span>{createdAt}</span>
             </span>

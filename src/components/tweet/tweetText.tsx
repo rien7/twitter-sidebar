@@ -399,7 +399,7 @@ export const formatDateTime = (
   const date = new Date(createdAt);
   if (Number.isNaN(date.getTime())) return null;
   if (type === "long") {
-    return new Intl.DateTimeFormat("zh-CN", {
+    return new Intl.DateTimeFormat(undefined, {
       year: "numeric",
       month: "long",
       day: "numeric",
@@ -417,9 +417,9 @@ export const formatDateTime = (
       return `${diff.value}${diff.unit}`;
     case "d":
       if (diff.value <= 3) return `${diff.value}${diff.unit}`;
-      return new Intl.DateTimeFormat("zh-CN", {
-        year: "numeric",
-        month: "long",
+      return new Intl.DateTimeFormat(undefined, {
+        year: now.getFullYear() === date.getFullYear() ? undefined : "numeric",
+        month: "short",
         day: "numeric",
       }).format(date);
   }

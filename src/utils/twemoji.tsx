@@ -40,11 +40,7 @@ export const renderWithTwemoji = (
     const [start, end] = emoji.indices;
     if (start > cursor) {
       const slice = value.slice(cursor, start);
-      nodes.push(
-        <span key={`twemoji-text-${i++}`} style={{ whiteSpace: "pre-wrap" }}>
-          {decode(slice)}
-        </span>
-      );
+      nodes.push(<span key={`twemoji-text-${i++}`}>{decode(slice)}</span>);
     }
     nodes.push(
       <img
@@ -60,9 +56,7 @@ export const renderWithTwemoji = (
 
   if (cursor < value.length) {
     nodes.push(
-      <span key={`twemoji-text-${i++}`} style={{ whiteSpace: "pre-wrap" }}>
-        {decode(value.slice(cursor))}
-      </span>
+      <span key={`twemoji-text-${i++}`}>{decode(value.slice(cursor))}</span>
     );
   }
 
