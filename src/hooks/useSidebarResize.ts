@@ -3,22 +3,20 @@ import type {
   MouseEvent as ReactMouseEvent,
   PointerEvent as ReactPointerEvent,
 } from "react";
-import {
-  SIDEBAR_WIDTH_MAX,
-  SIDEBAR_WIDTH_MIN,
-} from "@/constants/layout";
+import { SIDEBAR_WIDTH_MAX, SIDEBAR_WIDTH_MIN } from "@/constants/layout";
 import { sidebarStore } from "@/store/sidebarStore";
 
 export const useSidebarResize = (currentWidth: number, enabled: boolean) => {
   const dragRef = useRef<{ startX: number; startWidth: number } | null>(null);
   const [isResizing, setIsResizing] = useState(false);
+  const root = document.body;
 
   const stopDragging = useCallback(() => {
     dragRef.current = null;
     setIsResizing(false);
-    document.body.style.cursor = "";
-    document.body.style.userSelect = "";
-  }, []);
+    root.style.cursor = "";
+    root.style.userSelect = "";
+  }, [root]);
 
   useEffect(() => () => stopDragging(), [stopDragging]);
 
@@ -26,6 +24,29 @@ export const useSidebarResize = (currentWidth: number, enabled: boolean) => {
     | ReactPointerEvent<HTMLDivElement>
     | ReactMouseEvent<HTMLDivElement>;
 
+  const setCursor = useCallback(
+    (width: number) => {
+      if (width === SIDEBAR_WIDTH_MIN) {
+        root.style.cursor = "w-resize";
+      } else if (width === SIDEBAR_WIDTH_MAX) {
+        root.style.cursor = "e-resize";
+      } else {
+        root.style.cursor = "ew-resize";
+      }
+      root.style.userSelect = "none";
+    },
+    [root]
+  );
+  const handlePointerOver = useCallback(
+    (width: number) => {
+      setCursor(width);
+    },
+    [setCursor]
+  );
+  const handlePointerOut = useCallback(() => {
+    root.style.cursor = "";
+    root.style.userSelect = "";
+  }, [root]);
   const handlePointerDown = useCallback(
     (event: ResizeStartEvent) => {
       if (!enabled || ("button" in event && event.button !== 0)) {
@@ -34,8 +55,7 @@ export const useSidebarResize = (currentWidth: number, enabled: boolean) => {
 
       dragRef.current = { startX: event.clientX, startWidth: currentWidth };
       setIsResizing(true);
-      document.body.style.cursor = "ew-resize";
-      document.body.style.userSelect = "none";
+      setCursor(currentWidth);
 
       const handleMove = (moveEvent: PointerEvent | MouseEvent) => {
         const drag = dragRef.current;
@@ -44,11 +64,9 @@ export const useSidebarResize = (currentWidth: number, enabled: boolean) => {
         const delta = drag.startX - clientX;
         const next = Math.max(
           SIDEBAR_WIDTH_MIN,
-          Math.min(
-            SIDEBAR_WIDTH_MAX,
-            Math.round(drag.startWidth + delta)
-          )
+          Math.min(SIDEBAR_WIDTH_MAX, Math.round(drag.startWidth + delta))
         );
+        setCursor(next);
         sidebarStore.setWidth(next);
         moveEvent.preventDefault();
       };
@@ -66,8 +84,8 @@ export const useSidebarResize = (currentWidth: number, enabled: boolean) => {
       window.addEventListener("pointerup", handleUp);
       window.addEventListener("mouseup", handleUp);
     },
-    [currentWidth, enabled, stopDragging]
+    [currentWidth, enabled, setCursor, stopDragging]
   );
 
-  return { isResizing, handlePointerDown };
+  return { isResizing, handlePointerDown, handlePointerOver, handlePointerOut };
 };

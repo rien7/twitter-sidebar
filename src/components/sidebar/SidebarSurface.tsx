@@ -48,10 +48,8 @@ export const SidebarSurface = () => {
     if (!isOpen) firstOpenMainTweetIdRef.current = null;
   }, [isOpen]);
 
-  const { isResizing, handlePointerDown } = useSidebarResize(
-    width,
-    !isSidebarCollapsed
-  );
+  const { isResizing, handlePointerDown, handlePointerOver, handlePointerOut } =
+    useSidebarResize(width, !isSidebarCollapsed);
   useScrollBoundaryLock(scrollAreaRef, isOpen);
 
   useEffect(() => {
@@ -107,8 +105,7 @@ export const SidebarSurface = () => {
           }
         >
           {isOpen && !pinned && !activeMedia ? (
-            <button
-              type="button"
+            <div
               className="pointer-events-auto absolute inset-0 bg-black/30"
               onClick={() => sidebarStore.close()}
               aria-label="关闭侧边栏遮罩"
@@ -139,9 +136,15 @@ export const SidebarSurface = () => {
                 aria-orientation="vertical"
                 aria-label="调整侧边栏宽度"
                 tabIndex={0}
-                className="absolute left-0 top-0 z-10 h-full w-1 cursor-ew-resize select-none opacity-0 transition-opacity hover:opacity-100 focus:opacity-100"
-                style={{ background: "transparent" }}
+                className={cn(
+                  "absolute left-0 -translate-x-1/2 top-0 z-50 h-full w-1 select-none transition-colors",
+                  isResizing
+                    ? "bg-twitter-accent"
+                    : "bg-transparent hover:bg-twitter-accent"
+                )}
                 onPointerDown={handlePointerDown}
+                onPointerOver={() => handlePointerOver(width)}
+                onPointerOut={handlePointerOut}
               />
             ) : null}
             <SidebarContent
