@@ -1,5 +1,6 @@
 import { postToContent } from "./messaging";
 import { performTweetActionRequest } from "./tweetActions";
+import { performPollVoteRequest } from "./poll";
 import { performTweetDetailRequest } from "./tweetDetailTemplate";
 import { performMediaUploadRequest } from "./mediaUpload";
 import { installXhrInterceptor } from "./xhrInterceptor";
@@ -11,11 +12,14 @@ import {
   CONTENT_EVENT_TYPE_FRIENDSHIP_REQUEST,
   CONTENT_EVENT_TYPE_FOLLOWING_LIST_REQUEST,
   CONTENT_EVENT_TYPE_UPLOAD_REQUEST,
+  CONTENT_EVENT_TYPE_POLL_VOTE_REQUEST,
   EXT_BRIDGE_SOURCE,
   INTERCEPTOR_EVENT_TYPE_ACTION_ERROR,
   INTERCEPTOR_EVENT_TYPE_ACTION_RESPONSE,
   INTERCEPTOR_EVENT_TYPE_DETAIL_ERROR,
   INTERCEPTOR_EVENT_TYPE_DETAIL_RESPONSE,
+  INTERCEPTOR_EVENT_TYPE_POLL_VOTE_ERROR,
+  INTERCEPTOR_EVENT_TYPE_POLL_VOTE_RESPONSE,
   INTERCEPTOR_EVENT_TYPE_FRIENDSHIP_ERROR,
   INTERCEPTOR_EVENT_TYPE_FRIENDSHIP_RESPONSE,
   INTERCEPTOR_EVENT_TYPE_FOLLOWING_LIST_ERROR,
@@ -89,6 +93,51 @@ window.addEventListener("message", async (event: MessageEvent) => {
           error instanceof Error ? error.message : String(error ?? "未知错误"),
       });
     }
+  }
+
+  if (data.type === CONTENT_EVENT_TYPE_POLL_VOTE_REQUEST) {
+    const payload = data.payload as {
+      requestId?: string;
+      endpoint?: string;
+      cardUri?: string;
+      cardName?: string;
+      tweetId?: string;
+      choiceId?: number;
+      cardsPlatform?: string;
+    };
+
+    if (
+      !payload?.requestId ||
+      !payload.endpoint ||
+      !payload.cardUri ||
+      !payload.cardName ||
+      !payload.tweetId ||
+      typeof payload.choiceId !== "number"
+    ) {
+      return;
+    }
+
+    try {
+      const result = await performPollVoteRequest({
+        endpoint: payload.endpoint,
+        cardUri: payload.cardUri,
+        cardName: payload.cardName,
+        tweetId: payload.tweetId,
+        choiceId: payload.choiceId,
+        cardsPlatform: payload.cardsPlatform,
+      });
+      postToContent(INTERCEPTOR_EVENT_TYPE_POLL_VOTE_RESPONSE, {
+        requestId: payload.requestId,
+        data: result,
+      });
+    } catch (error) {
+      postToContent(INTERCEPTOR_EVENT_TYPE_POLL_VOTE_ERROR, {
+        requestId: payload.requestId,
+        error:
+          error instanceof Error ? error.message : String(error ?? "未知错误"),
+      });
+    }
+    return;
   }
 
   if (data.type === CONTENT_EVENT_TYPE_UPLOAD_REQUEST) {

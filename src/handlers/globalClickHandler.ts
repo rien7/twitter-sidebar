@@ -60,6 +60,14 @@ const isVideoController = (node: HTMLElement): boolean => {
   return controllerEl.contains(node);
 };
 
+const isCardPoll = (node: HTMLElement): boolean => {
+  return node.getAttribute("data-testid") === "cardPoll";
+};
+
+const isCardPollCanPoll = (node: HTMLElement): boolean => {
+  return node.querySelector('[role="radiogroup"]') !== null;
+};
+
 const findTimelineArticleRoot = (
   start: HTMLElement | null
 ): HTMLElement | null => {
@@ -70,6 +78,9 @@ const findTimelineArticleRoot = (
       node.getAttribute("data-testid") === "tweet"
     ) {
       return node;
+    }
+    if (isCardPoll(node)) {
+      if (isCardPollCanPoll(node)) return null;
     }
     if (isInteractiveElement(node)) {
       return null;

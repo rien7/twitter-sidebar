@@ -244,36 +244,43 @@ export interface TweetCard {
 }
 
 export interface TweetCardLegacy {
-  binding_values?: TweetCardBindingValue[];
+  binding_values?:
+    | TweetCardBindingValue[]
+    | Record<string, TweetCardBindingValueValue>
+    | null;
   name?: string;
   url?: string;
   card_platform?: Record<string, unknown>;
   user_refs_results?: Array<{ result?: UserResult } | null | undefined>;
 }
 
+export interface TweetCardBindingValueValue {
+  type?: string;
+  string_value?: string;
+  scribe_key?: string;
+  boolean_value?: boolean;
+  long_value?: string;
+  image_value?: {
+    url?: string;
+    width?: number;
+    height?: number;
+    alt?: string;
+  };
+  image_color_value?: {
+    palette?: Array<{
+      rgb?: { red?: number; green?: number; blue?: number };
+      percentage?: number;
+    }>;
+  };
+  user_value?: {
+    id_str?: string;
+    path?: string[];
+  };
+}
+
 export interface TweetCardBindingValue {
   key?: string;
-  value?: {
-    type?: string;
-    string_value?: string;
-    scribe_key?: string;
-    image_value?: {
-      url?: string;
-      width?: number;
-      height?: number;
-      alt?: string;
-    };
-    image_color_value?: {
-      palette?: Array<{
-        rgb?: { red?: number; green?: number; blue?: number };
-        percentage?: number;
-      }>;
-    };
-    user_value?: {
-      id_str?: string;
-      path?: string[];
-    };
-  };
+  value?: TweetCardBindingValueValue;
 }
 
 /* --------------------------- User (Author) ------------------------ */

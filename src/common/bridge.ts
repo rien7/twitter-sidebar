@@ -13,6 +13,12 @@ export const CONTENT_EVENT_TYPE_ACTION_REQUEST = "tweet-action:request";
 export const INTERCEPTOR_EVENT_TYPE_ACTION_RESPONSE = "tweet-action:response";
 export const INTERCEPTOR_EVENT_TYPE_ACTION_ERROR = "tweet-action:error";
 
+export const CONTENT_EVENT_TYPE_POLL_VOTE_REQUEST = "tweet-poll:vote:request";
+export const INTERCEPTOR_EVENT_TYPE_POLL_VOTE_RESPONSE =
+  "tweet-poll:vote:response";
+export const INTERCEPTOR_EVENT_TYPE_POLL_VOTE_ERROR =
+  "tweet-poll:vote:error";
+
 export const CONTENT_EVENT_TYPE_UPLOAD_REQUEST = "tweet-upload:request";
 export const INTERCEPTOR_EVENT_TYPE_UPLOAD_PROGRESS = "tweet-upload:progress";
 export const INTERCEPTOR_EVENT_TYPE_UPLOAD_RESPONSE = "tweet-upload:response";

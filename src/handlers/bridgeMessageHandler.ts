@@ -6,6 +6,8 @@ import {
   INTERCEPTOR_EVENT_TYPE_DETAIL_ERROR,
   INTERCEPTOR_EVENT_TYPE_ACTION_RESPONSE,
   INTERCEPTOR_EVENT_TYPE_ACTION_ERROR,
+  INTERCEPTOR_EVENT_TYPE_POLL_VOTE_RESPONSE,
+  INTERCEPTOR_EVENT_TYPE_POLL_VOTE_ERROR,
   INTERCEPTOR_EVENT_TYPE_FRIENDSHIP_RESPONSE,
   INTERCEPTOR_EVENT_TYPE_FRIENDSHIP_ERROR,
   INTERCEPTOR_EVENT_TYPE_FOLLOWING_LIST_RESPONSE,
@@ -25,6 +27,7 @@ import {
   handleUploadProgress,
   handleUploadSuccess,
 } from "@/api/twitterUpload";
+import { handlePollVoteResponse } from "@/api/twitterPoll";
 
 export const registerBridgeMessageHandler = () => {
   const handleMessage = (event: MessageEvent) => {
@@ -46,6 +49,12 @@ export const registerBridgeMessageHandler = () => {
         break;
       case INTERCEPTOR_EVENT_TYPE_ACTION_ERROR:
         handleActionResponse(data.payload, true);
+        break;
+      case INTERCEPTOR_EVENT_TYPE_POLL_VOTE_RESPONSE:
+        handlePollVoteResponse(data.payload, false);
+        break;
+      case INTERCEPTOR_EVENT_TYPE_POLL_VOTE_ERROR:
+        handlePollVoteResponse(data.payload, true);
         break;
       case INTERCEPTOR_EVENT_TYPE_FRIENDSHIP_RESPONSE:
         handleFriendshipResponse(data.payload, false);

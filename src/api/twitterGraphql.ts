@@ -8,6 +8,7 @@ import {
   type TweetQueryOperationKey,
 } from "@common/queryId";
 import type { TweetResultByRestIdResponse } from "@/types/response";
+import { createRequestId } from "@/utils/requestId";
 
 interface ActionSuccessPayload {
   requestId: string;
@@ -25,9 +26,6 @@ interface PendingResolver {
 }
 
 const pendingActionRequests = new Map<string, PendingResolver>();
-
-const generateRequestId = (key: string) =>
-  `${key}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 
 export const handleActionResponse = (
   payload: ActionSuccessPayload | ActionErrorPayload,
@@ -58,7 +56,7 @@ const sendTweetActionRequest = async (
     throw new Error(`未配置 ${key} 对应的 GraphQL 文档 ID，无法继续调用。`);
   }
 
-  const requestId = generateRequestId(key);
+  const requestId = createRequestId(key);
   const payload = {
     requestId,
     docId: config.id,

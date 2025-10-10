@@ -61,3 +61,12 @@ export type FollowingListRequest = {
   count?: number;
   cursor?: string;
 };
+
+export type PollVoteRequest = {
+  endpoint: string;
+  cardUri: string;
+  cardName: string;
+  tweetId: string;
+  choiceId: number;
+  cardsPlatform?: string;
+};

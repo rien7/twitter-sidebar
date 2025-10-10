@@ -3,6 +3,7 @@ import CardPreview from "@/components/tweet/CardPreview";
 import MediaGallery from "@/components/tweet/MediaGallery";
 import TweetActions from "@/components/tweet/TweetActions";
 import ReplyComposer, { ReplyComposerHandle } from "../ReplyComposer";
+import TweetPoll from "@/components/tweet/TweetPoll";
 import type {
   MediaEntity,
   TweetLimitedAction,
@@ -11,6 +12,7 @@ import type {
 import type { TweetCardInfo } from "@/components/tweet/tweetText";
 import { cn } from "@/utils/cn";
 import { getProtected, getUserFromTweet } from "@/utils/responseData";
+import type { TweetPollInfo } from "@/types/poll";
 
 interface TweetCardContentProps {
   tweet: TweetResult;
@@ -27,6 +29,7 @@ interface TweetCardContentProps {
   richTextNodes: { key: string; node: ReactNode }[];
   media?: MediaEntity[];
   cardInfo: TweetCardInfo | null;
+  poll?: TweetPollInfo | null;
   quotedTweetNode: ReactNode;
   showActions: boolean;
   showMediaGallery: boolean;
@@ -52,6 +55,7 @@ export const TweetCardContent = ({
   richTextNodes,
   media,
   cardInfo,
+  poll,
   quotedTweetNode,
   showActions,
   showMediaGallery,
@@ -73,6 +77,12 @@ export const TweetCardContent = ({
   );
   const galleryVariant = isMain ? "main" : "quote";
   const isProtected = getProtected(getUserFromTweet(tweet));
+  const showMedia =
+    showMediaGallery && Array.isArray(media) && media.length > 0;
+  const showPoll = Boolean(poll);
+  const showCardPreview = Boolean(cardInfo);
+  const showQuote = Boolean(quotedTweetNode);
+  const hasSupplementary = showMedia || showPoll || showCardPreview || showQuote;
   const disabledActions = useMemo(() => {
     const disabled = new Set<"reply" | "retweet">();
     if (isProtected) {
@@ -97,14 +107,22 @@ export const TweetCardContent = ({
           <Fragment key={key}>{node}</Fragment>
         ))}
       </div>
-      {(media || cardInfo || quotedTweetNode) && (
+      {hasSupplementary && (
         <div
           className={cn("mt-3 flex flex-col gap-1", isReply && "ml-11 pl-2")}
           ref={cardRef}
         >
-          {showMediaGallery && media ? (
+          {showPoll ? (
+            <TweetPoll
+              tweetId={tweet.rest_id}
+              poll={poll!}
+              controllerData={controllerData ?? null}
+              className={cn(isQuote && "z-10")}
+            />
+          ) : null}
+          {showMedia ? (
             <MediaGallery
-              media={media}
+              media={media!}
               variant={galleryVariant}
               className={cn(isQuote && "z-10")}
               onSelect={
@@ -114,8 +132,8 @@ export const TweetCardContent = ({
               }
             />
           ) : null}
-          {cardInfo ? <CardPreview card={cardInfo} /> : null}
-          {quotedTweetNode}
+          {showCardPreview ? <CardPreview card={cardInfo!} /> : null}
+          {showQuote ? quotedTweetNode : null}
         </div>
       )}
       {isMain ? (

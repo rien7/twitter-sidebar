@@ -30,6 +30,7 @@ import {
   SidebarContentRefContext,
   SidebarContentContext,
 } from "@/context/SidebarTimelineContext";
+import { extractPollInfo } from "@/utils/poll";
 
 const useTweetComposer = () => {
   const [composerOpen, setComposerOpen] = useState(false);
@@ -131,6 +132,7 @@ const TweetCard = ({
       : undefined) ?? undefined;
   const mediaOverlay = useMediaOverlay();
   const cardInfo = useMemo(() => extractCardInfo(tweet), [tweet]);
+  const pollInfo = useMemo(() => extractPollInfo(tweet), [tweet]);
   const isQuote = variant === "quote";
   const isReply = variant === "reply";
   const isMain = variant === "main";
@@ -339,6 +341,7 @@ const TweetCard = ({
             richTextNodes={richTextNodes}
             media={media}
             cardInfo={cardInfo}
+            poll={pollInfo}
             quotedTweetNode={quotedTweetNode}
             showActions={showActions}
             showMediaGallery={showMediaGallery}

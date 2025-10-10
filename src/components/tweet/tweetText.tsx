@@ -2,6 +2,7 @@ import type {
   HashtagEntity,
   LegacyTweet,
   MediaEntity,
+  TweetCardBindingValue,
   TweetResult,
   UrlEntity,
   UserMentionEntity,
@@ -90,17 +91,26 @@ type NormalizedEntity = {
 
 export const extractCardInfo = (tweet: TweetResult): TweetCardInfo | null => {
   const legacyCard = tweet.card?.legacy;
-  const bindings = legacyCard?.binding_values ?? [];
-  if (!legacyCard || bindings.length === 0) return null;
+  if (
+    !legacyCard ||
+    !legacyCard.binding_values ||
+    !legacyCard.url?.startsWith("https://")
+  )
+    return null;
 
-  const valueMap = new Map<
-    string,
-    NonNullable<(typeof bindings)[number]["value"]>
-  >();
-  bindings.forEach((binding) => {
-    if (!binding?.key || !binding.value) return;
-    valueMap.set(binding.key, binding.value);
-  });
+  const valueMap = new Map<string, TweetCardBindingValue["value"]>();
+  if (Array.isArray(legacyCard.binding_values)) {
+    legacyCard.binding_values.forEach((binding) => {
+      if (!binding?.key || !binding.value) return;
+      valueMap.set(binding.key, binding.value);
+    });
+  } else {
+    for (const [key, value] of Object.entries(legacyCard.binding_values)) {
+      if (!key || !value) continue;
+      valueMap.set(key, value);
+    }
+  }
+
   if (valueMap.size === 0) return null;
 
   const getString = (key: string): string | undefined => {
