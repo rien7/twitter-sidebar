@@ -8,6 +8,7 @@
   --color-twitter-text-inverse: #ffffff;
   --color-twitter-background-inverse: #0f1419;
 
+  --color-twitter-border-light: #eff3f4;
   --color-twitter-border-strong: #cfd9de;
 
   --color-twitter-text-primary: #0f1419;
@@ -47,6 +48,7 @@
     --color-twitter-text-inverse: #0f1419;
     --color-twitter-background-inverse: #eff3f4;
 
+    --color-twitter-border-light: #2f3336;
     --color-twitter-border-strong: #536471;
 
     --color-twitter-text-primary: #e7e9ea;

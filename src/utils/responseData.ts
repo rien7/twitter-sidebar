@@ -68,7 +68,8 @@ export function isTweetTombstone(value: unknown): value is TweetTombstone {
 
 /* --------------- From TweetResult -------------- */
 
-export function getUserFromTweet(tweet: TweetResult) {
+export function getUserFromTweet(tweet: TweetResult | null) {
+  if (tweet === null) return null;
   const user = tweet.core?.user_results?.result;
   if (!user || (user as { __typename?: string }).__typename !== "User") {
     return null;
