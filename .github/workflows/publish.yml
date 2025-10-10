@@ -12,16 +12,18 @@ jobs:
 
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
-        with:
-          node-version: 22
       - uses: pnpm/action-setup@v4
         with:
           version: 10
+          run_install: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: 'pnpm'
       - name: Build
         run: |
-          npm ci
-          npm run build
+          pnpm install
+          pnpm run build
       - name: Upload to Chrome Webstore
         uses: mnao305/chrome-extension-upload@v5.0.0
         with:
