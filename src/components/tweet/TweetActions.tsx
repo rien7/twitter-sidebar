@@ -14,19 +14,17 @@ import { requestTweetDetail } from "@/handlers/tweetDetailHandler";
 import {
   ReplyIcon,
   RetweetIcon,
-  LikeIcon,
-  LikeActiveIcon,
   ViewIcon,
   BookmarkIcon,
   BookmarkActiveIcon,
+  LikeAnimationIcon,
 } from "@/icons/TweetActionIcons";
 
 type ActionKey = "reply" | "retweet" | "like" | "bookmark" | "view";
 const TWEET_ACTION_ICONS = {
   reply: ReplyIcon,
   retweet: RetweetIcon,
-  like: LikeIcon,
-  like_active: LikeActiveIcon,
+  like: LikeAnimationIcon,
   view: ViewIcon,
   bookmark: BookmarkIcon,
   bookmark_active: BookmarkActiveIcon,
@@ -109,6 +107,7 @@ const TweetActions = ({
   const [pendingAction, setPendingAction] = useState<
     null | "reply" | "retweet" | "like" | "bookmark"
   >(null);
+  const [likeActivatedByUser, setLikeActivatedByUser] = useState(false);
 
   useEffect(() => {
     setCounts({ ...initialCounts });
@@ -117,6 +116,10 @@ const TweetActions = ({
   useEffect(() => {
     setActives({ ...initialActives });
   }, [initialActives]);
+
+  useEffect(() => {
+    setLikeActivatedByUser(false);
+  }, [tweetId]);
 
   const sizeValue = ACTION_ICON_SIZE[size];
   const sizeClasses = size === "sm" ? "text-[13px]" : "text-[14px]";
@@ -162,6 +165,7 @@ const TweetActions = ({
     if (pendingAction) return;
     const previousActive = actives.like;
     const previousCount = counts.like;
+    const previousUserActivated = likeActivatedByUser;
     const currentActive = Boolean(previousActive);
     const nextActive = !currentActive;
 
@@ -171,6 +175,7 @@ const TweetActions = ({
       ...previous,
       like: adjustCount(previous.like, nextActive ? 1 : -1),
     }));
+    setLikeActivatedByUser(nextActive);
 
     try {
       if (nextActive) {
@@ -183,10 +188,11 @@ const TweetActions = ({
       console.error("[TSB][TweetActions] 点赞失败", error);
       setActives((previous) => ({ ...previous, like: previousActive }));
       setCounts((previous) => ({ ...previous, like: previousCount }));
+      setLikeActivatedByUser(previousUserActivated);
     } finally {
       setPendingAction(null);
     }
-  }, [actives.like, counts.like, pendingAction, tweetId]);
+  }, [actives.like, counts.like, likeActivatedByUser, pendingAction, tweetId]);
 
   const handleToggleBookmark = useCallback(async () => {
     if (!tweetId) return;
@@ -302,11 +308,9 @@ const TweetActions = ({
           return null;
         }
         const active = action.active ?? null;
-        let Icon = TWEET_ACTION_ICONS[action.key];
-        if (action.key === "like" && active) {
-          Icon = TWEET_ACTION_ICONS["like_active"];
-        } else if (action.key === "bookmark" && active) {
-          Icon = TWEET_ACTION_ICONS["bookmark_active"];
+        let IconComponent = TWEET_ACTION_ICONS[action.key];
+        if (action.key === "bookmark" && active) {
+          IconComponent = TWEET_ACTION_ICONS["bookmark_active"];
         }
         const count = action.count ?? null;
         const formatted = formatCount(count ?? undefined);
@@ -324,6 +328,28 @@ const TweetActions = ({
               pendingAction === "like" ||
               pendingAction === "bookmark"));
         const isPending = pendingAction === action.key;
+        const isLike = action.key === "like";
+        const iconSize = isLike ? (sizeValue * 8) / 3 : sizeValue;
+        const iconWrapperStyle: React.CSSProperties | undefined = isLike
+          ? {
+              width: sizeValue,
+              height: sizeValue,
+            }
+          : undefined;
+        const iconStyle: React.CSSProperties | undefined = isLike
+          ? {
+              position: "absolute",
+              left: "50%",
+              top: "50%",
+              transform: "translate(-50%, -50%)",
+              width: iconSize,
+              height: iconSize,
+            }
+          : undefined;
+        const iconClassName =
+          isLike && action.active
+            ? cn("active", likeActivatedByUser && "user-active")
+            : undefined;
 
         return (
           <button
@@ -349,14 +375,21 @@ const TweetActions = ({
             }
           >
             <div className="inline-flex items-center">
-              <div className="relative inline-flex">
+              <div
+                className="relative inline-flex items-center justify-center overflow-visible"
+                style={iconWrapperStyle}
+              >
                 <span className="absolute inset-0 bottom-0 left-0 right-0 top-0 -m-2 rounded-full bg-(--accent-rgba) group-disabled:bg-transparent opacity-0 transition-opacity group-hover:opacity-100" />
-                <Icon size={sizeValue} />
+                <IconComponent
+                  className={iconClassName}
+                  size={iconSize}
+                  style={iconStyle}
+                />
               </div>
               {shouldShowCount ? (
                 <span
                   className={cn(
-                    "px-1 text-[13px] group-hover:text-current",
+                    "px-1 text-[13px] group-hover:text-current min-w-[calc(1em + 24px)]",
                     active
                       ? "text-(--accent-rgb)"
                       : "text-twitter-text-secondary dark:text-twitter-dark-text-secondary"

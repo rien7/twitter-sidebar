@@ -1,3 +1,4 @@
+import { cn } from "@/utils/cn";
 import type { IconProps } from "./types";
 import type { JSX } from "react";
 
@@ -47,3 +48,70 @@ export const BookmarkIcon = createFilledIcon(() => (
 export const BookmarkActiveIcon = createFilledIcon(() => (
   <path d="M4 4.5C4 3.12 5.119 2 6.5 2h11C18.881 2 20 3.12 20 4.5v18.44l-8-5.71-8 5.71V4.5z" />
 ));
+
+export const LikeAnimationIcon = ({
+  size,
+  className,
+  ...rest
+}: IconProps) => {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 64 64"
+      width={size}
+      height={size}
+      className={cn("like-animation", className)}
+      {...rest}
+    >
+      <path
+        id="empty-heart"
+        fill="currentcolor"
+        d="M 36.697 25.169 C 35.475 25.109 34.018 25.679 32.807 27.329 L 32.002 28.419 L 31.196 27.329 C 29.984 25.679 28.526 25.109 27.304 25.169 C 26.061 25.239 24.955 25.949 24.394 27.079 C 23.842 28.199 23.761 29.859 24.873 31.899 C 25.947 33.869 28.13 36.169 32.002 38.509 C 35.872 36.169 38.054 33.869 39.128 31.899 C 40.239 29.859 40.158 28.199 39.605 27.079 C 39.044 25.949 37.939 25.239 36.697 25.169 Z M 40.884 32.859 C 39.533 35.339 36.883 37.979 32.505 40.529 L 32.002 40.829 L 31.498 40.529 C 27.119 37.979 24.469 35.339 23.116 32.859 C 21.756 30.359 21.706 27.999 22.602 26.189 C 23.489 24.399 25.249 23.279 27.203 23.179 C 28.854 23.089 30.571 23.739 32.001 25.189 C 33.43 23.739 35.147 23.089 36.797 23.179 C 38.751 23.279 40.511 24.399 41.398 26.189 C 42.294 27.999 42.244 30.359 40.884 32.859 Z"
+      />
+      <g id="Group" fill="none" fill-rule="evenodd">
+        <path
+          d="M 40.884 32.859 C 39.533 35.339 36.883 37.979 32.505 40.529 L 32.002 40.829 L 31.498 40.529 C 27.119 37.979 24.469 35.339 23.116 32.859 C 21.756 30.359 21.706 27.999 22.602 26.189 C 23.489 24.399 25.249 23.279 27.203 23.179 C 28.854 23.089 30.571 23.739 32.001 25.189 C 33.43 23.739 35.147 23.089 36.797 23.179 C 38.751 23.279 40.511 24.399 41.398 26.189 C 42.294 27.999 42.244 30.359 40.884 32.859 Z"
+          id="heart"
+          opacity="0"
+          fill="currentcolor"
+        />
+        <circle
+          id="main-circ"
+          fill="#E2264D"
+          opacity="0"
+          cx="32"
+          cy="32"
+          r="1.5"
+        />
+        <g id="grp7" opacity="0" transform="matrix(1, 0, 0, 1, 10, 9.5)">
+          <circle id="oval1" fill="#9CD8C3" cx="2" cy="6" r="2"></circle>
+          <circle id="oval2" fill="#8CE8C3" cx="5" cy="2" r="2"></circle>
+        </g>
+        <g id="grp6" opacity="0" transform="matrix(1, 0, 0, 1, 3, 31.5)">
+          <circle id="oval1" fill="#CC8EF5" cx="2" cy="7" r="2"></circle>
+          <circle id="oval2" fill="#91D2FA" cx="3" cy="2" r="2"></circle>
+        </g>
+        <g id="grp3" opacity="0" transform="matrix(1, 0, 0, 1, 55, 31.5)">
+          <circle id="oval2" fill="#9CD8C3" cx="2" cy="7" r="2"></circle>
+          <circle id="oval1" fill="#8CE8C3" cx="4" cy="2" r="2"></circle>
+        </g>
+        <g id="grp2" opacity="0" transform="matrix(1, 0, 0, 1, 47, 9.5)">
+          <circle id="oval2" fill="#CC8EF5" cx="5" cy="6" r="2"></circle>
+          <circle id="oval1" fill="#CC8EF5" cx="2" cy="2" r="2"></circle>
+        </g>
+        <g id="grp5" opacity="0" transform="matrix(1, 0, 0, 1, 17, 53.5)">
+          <circle id="oval1" fill="#91D2FA" cx="6" cy="5" r="2"></circle>
+          <circle id="oval2" fill="#91D2FA" cx="2" cy="2" r="2"></circle>
+        </g>
+        <g id="grp4" opacity="0" transform="matrix(1, 0, 0, 1, 38, 53.5)">
+          <circle id="oval1" fill="#F48EA7" cx="6" cy="5" r="2"></circle>
+          <circle id="oval2" fill="#F48EA7" cx="2" cy="2" r="2"></circle>
+        </g>
+        <g id="grp1" opacity="0" transform="matrix(1, 0, 0, 1, 27, 3.5)">
+          <circle id="oval1" fill="#9FC7FA" cx="2.5" cy="3" r="2"></circle>
+          <circle id="oval2" fill="#9FC7FA" cx="7.5" cy="2" r="2"></circle>
+        </g>
+      </g>
+    </svg>
+  );
+};
