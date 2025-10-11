@@ -14,7 +14,8 @@ interface SidebarContentContextValue {
   mainTweetId: string | null;
   conversationId: string | null;
   timelineVersion: number;
-  firstOpenMainTweetId: string | null;
+  registerMainArticleRef: (ref: RefObject<HTMLElement | null>) => void;
+  mainArticleTopRef: RefObject<number | null>;
 }
 
 export const SidebarContentContext =

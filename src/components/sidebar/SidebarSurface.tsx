@@ -12,7 +12,7 @@ import { useSidebarResize } from "@/hooks/useSidebarResize";
 import { sidebarStore } from "@/store/sidebarStore";
 import { useSidebarStore } from "@/hooks/useSidebarStore";
 import { useMediaOverlay } from "@/context/mediaOverlay";
-import type { CSSProperties } from "react";
+import type { CSSProperties, RefObject } from "react";
 import { cn } from "@/utils/cn";
 import { SidebarRootContext } from "@/context/sidebarRoot";
 import { SidebarContentContext } from "@/context/SidebarTimelineContext";
@@ -24,6 +24,11 @@ export const SidebarSurface = () => {
 
   const rootRef = useRef<HTMLDivElement | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null!);
+  const mainArticleRef = useRef<HTMLElement | null>(null);
+  const registerMainArticleRef = (ref: RefObject<HTMLElement | null>) => {
+    mainArticleRef.current = ref.current;
+  };
+  const mainArticleClientTopRef = useRef<number | null>(null);
 
   const mediaOverlay = useMediaOverlay();
   const closeMedia = mediaOverlay?.closeMedia;
@@ -34,18 +39,24 @@ export const SidebarSurface = () => {
   const conversationId = tweet?.result.legacy?.conversation_id_str ?? null;
   const timelineVersionRef = useRef<number>(0);
   const previousMainTweetIdRef = useRef<string | null>(null);
-  const firstOpenMainTweetIdRef = useRef<string | null>(null);
+
+  if (mainArticleRef.current && scrollAreaRef.current) {
+    const articleTop = mainArticleRef.current.getBoundingClientRect().top;
+    const scrollTop = scrollAreaRef.current.getBoundingClientRect().top;
+    mainArticleClientTopRef.current = articleTop - scrollTop;
+  } else {
+    mainArticleClientTopRef.current = null;
+  }
 
   useEffect(() => {
     timelineVersionRef.current += 1;
   }, [tweet, tweetRelation]);
 
   useEffect(() => {
-    if (firstOpenMainTweetIdRef.current === null)
-      firstOpenMainTweetIdRef.current = mainTweetId;
-  }, [mainTweetId]);
-  useEffect(() => {
-    if (!isOpen) firstOpenMainTweetIdRef.current = null;
+    if (!isOpen) {
+      mainArticleRef.current = null;
+      mainArticleClientTopRef.current = null;
+    }
   }, [isOpen]);
 
   const { isResizing, handlePointerDown, handlePointerOver, handlePointerOut } =
@@ -88,7 +99,8 @@ export const SidebarSurface = () => {
           mainTweetId,
           conversationId,
           timelineVersion: timelineVersionRef.current,
-          firstOpenMainTweetId: firstOpenMainTweetIdRef.current,
+          registerMainArticleRef: registerMainArticleRef,
+          mainArticleTopRef: mainArticleClientTopRef,
         }}
       >
         <div

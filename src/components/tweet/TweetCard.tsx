@@ -102,8 +102,8 @@ const TweetCard = ({
   const conversationId = sidebarContentContext?.conversationId;
   const previousConversationId = useRef<string | null>(null);
   const timelineVersion = sidebarContentContext?.timelineVersion;
-  const previousTimelineVersion = useRef<number | null>(null);
-  const firstOpenMainTweetId = sidebarContentContext?.firstOpenMainTweetId;
+  const registerMainArticleRef = sidebarContentContext?.registerMainArticleRef;
+  const mainArticleClientTopRef = sidebarContentContext?.mainArticleTopRef;
 
   const composerRef = useRef<ReplyComposerHandle>(null);
   const { composerOpen, onComposerExpand, onComposerCollapse, toggleComposer } =
@@ -179,46 +179,59 @@ const TweetCard = ({
     const mainTweetChange = previousMainTweetId.current !== mainTweetId;
     const conversationChange =
       previousConversationId.current !== conversationId;
-    const timelineVersionChange =
-      previousTimelineVersion.current !== timelineVersion;
 
     previousMainTweetId.current = mainTweetId ?? null;
     previousConversationId.current = conversationId ?? null;
-    previousTimelineVersion.current = timelineVersion ?? null;
 
     if (!isMain || !articleRef.current || !scrollAreaRef?.current) return;
-    const changeMainInSameConversation = !conversationChange && mainTweetChange;
-    const updateTweetDetail =
-      timelineVersionChange && !conversationChange && !mainTweetChange;
-    const firstOpen = firstOpenMainTweetId === mainTweetId;
 
     const articleTop = articleRef.current.getBoundingClientRect().top;
     const scrollAreaTop = scrollAreaRef.current.getBoundingClientRect().top;
 
-    if (articleTop - scrollAreaTop < 0) {
+    if (mainTweetChange && !conversationChange && articleTop < scrollAreaTop) {
+      // when a reply become main, after change, the article top < scroll top
+      articleRef.current.scrollIntoView({
+        behavior: "instant",
+        block: "start",
+      });
+    } else if (conversationChange) {
+      // sidebar open
       articleRef.current.scrollIntoView({
         behavior: "instant",
         block: "start",
       });
     }
-
-    if (
-      !changeMainInSameConversation &&
-      (conversationChange || (updateTweetDetail && firstOpen))
-    ) {
-      articleRef.current.scrollIntoView(true);
-    }
+    registerMainArticleRef?.(articleRef);
   }, [
     isMain,
     articleRef,
     scrollAreaRef,
     mainTweetId,
     conversationId,
-    timelineVersion,
     previousMainTweetId,
     previousConversationId,
-    previousTimelineVersion,
-    firstOpenMainTweetId,
+    registerMainArticleRef,
+  ]);
+
+  useLayoutEffect(() => {
+    if (!isMain || !articleRef.current || !scrollAreaRef?.current) return;
+    if (mainArticleClientTopRef && mainArticleClientTopRef?.current !== null) {
+      articleRef.current.scrollIntoView({
+        behavior: "instant",
+        block: "start",
+      });
+      scrollAreaRef.current.scrollBy({
+        behavior: "instant",
+        top: -mainArticleClientTopRef.current,
+      });
+      mainArticleClientTopRef.current = null;
+    }
+  }, [
+    isMain,
+    articleRef,
+    scrollAreaRef,
+    mainArticleClientTopRef,
+    timelineVersion,
   ]);
 
   useFlip(
