@@ -10,7 +10,6 @@ import {
 } from "@/api/twitterGraphql";
 import { formatCount } from "@/components/tweet/tweetText";
 import type { TweetResult } from "@/types/response";
-import { requestTweetDetail } from "@/handlers/tweetDetailHandler";
 import {
   ReplyIcon,
   RetweetIcon,
@@ -150,7 +149,6 @@ const TweetActions = ({
       } else {
         await deleteRetweet(tweetId);
       }
-      requestTweetDetail(tweetId, null, true);
     } catch (error) {
       console.error("[TSB][TweetActions] 转推失败", error);
       setActives((previous) => ({ ...previous, retweet: previousActive }));
@@ -183,7 +181,6 @@ const TweetActions = ({
       } else {
         await unfavoriteTweet(tweetId);
       }
-      requestTweetDetail(tweetId, null, true);
     } catch (error) {
       console.error("[TSB][TweetActions] 点赞失败", error);
       setActives((previous) => ({ ...previous, like: previousActive }));
@@ -215,7 +212,6 @@ const TweetActions = ({
       } else {
         await deleteBookmark(tweetId);
       }
-      requestTweetDetail(tweetId, null, true);
     } catch (error) {
       console.error("[TSB][TweetActions] 收藏失败", error);
       setActives((previous) => ({ ...previous, bookmark: previousActive }));
@@ -225,18 +221,26 @@ const TweetActions = ({
     }
   }, [actives.bookmark, counts.bookmark, pendingAction, tweetId]);
 
-  const handleActionClick = (action: ActionKey) => {
+  const handleActionClick = (e: React.MouseEvent, action: ActionKey) => {
     switch (action) {
       case "reply":
+        e.preventDefault();
+        e.stopPropagation();
         void handleReply();
         break;
       case "retweet":
+        e.preventDefault();
+        e.stopPropagation();
         void handleToggleRetweet();
         break;
       case "like":
+        e.preventDefault();
+        e.stopPropagation();
         void handleToggleLike();
         break;
       case "bookmark":
+        e.preventDefault();
+        e.stopPropagation();
         void handleToggleBookmark();
         break;
       default:
@@ -363,7 +367,7 @@ const TweetActions = ({
                 ? "text-(--accent-rgb)"
                 : "text-twitter-text-secondary dark:text-twitter-dark-text-secondary"
             )}
-            onClick={() => handleActionClick(action.key)}
+            onClick={(e) => handleActionClick(e, action.key)}
             aria-label={action.label}
             disabled={isDisabled}
             aria-busy={isPending}
