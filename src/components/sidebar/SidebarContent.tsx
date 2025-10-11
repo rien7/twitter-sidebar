@@ -33,9 +33,34 @@ export const SidebarContent = ({
   const headerRef = useRef<HTMLElement | null>(null);
   const emptyAreaRef = useRef<HTMLDivElement | null>(null);
 
-  const handleSelectTweet = useCallback((tweet: TweetResult) => {
-    openTweetInSidebar(tweet.rest_id);
-  }, []);
+  const handleSelectTweet = useCallback(
+    (
+      tweet: TweetResult,
+      controllerData?: string | null,
+      articleRef?: RefObject<HTMLElement | null>
+    ) => {
+      if (articleRef?.current && scrollAreaRef.current) {
+        const scrollAreaTop = scrollAreaRef.current.getBoundingClientRect().top;
+        const articleTop = articleRef.current?.getBoundingClientRect().top;
+        if (articleTop - scrollAreaTop < 0) {
+          const onEnd = () => {
+            openTweetInSidebar(tweet.rest_id);
+            scrollAreaRef.current.removeEventListener("scrollend", onEnd);
+          };
+          scrollAreaRef.current.addEventListener("scrollend", onEnd);
+          articleRef.current.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
+        } else {
+          openTweetInSidebar(tweet.rest_id);
+        }
+      } else {
+        openTweetInSidebar(tweet.rest_id);
+      }
+    },
+    [scrollAreaRef]
+  );
 
   return (
     <SidebarContentRefContext
@@ -53,11 +78,6 @@ export const SidebarContent = ({
           className="scrollbar-thin flex-1 overflow-y-auto"
           style={{ overflowAnchor: "auto" }}
         >
-          <div
-            aria-hidden
-            data-anchor-sentinel
-            style={{ blockSize: 1, overflowAnchor: "auto" }} // 1px 的稳定块级
-          />
           <SidebarTimeline
             tweet={tweet}
             tweetRelation={tweetRelation}

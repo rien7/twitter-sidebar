@@ -303,7 +303,7 @@ const TweetActions = ({
         "flex flex-wrap content-start items-center gap-8",
         size === "md" &&
           "bg-twitter-background-surface dark:bg-twitter-dark-background-surface border-t border-twitter-divide-light border-solid",
-        size === "sm" ? "mt-3" : "sticky bottom-0 justify-between p-3 z-20",
+        size === "sm" ? "mt-3" : "sticky bottom-0 justify-between p-3",
         className
       )}
     >

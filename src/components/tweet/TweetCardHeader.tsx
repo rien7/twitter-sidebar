@@ -45,10 +45,8 @@ export const TweetCardHeader = ({
   userNameRef,
   userHandleRef,
 }: TweetCardHeaderProps) => {
-  const transitionClass = "";
   const avatarClass = cn(
     "overflow-hidden rounded-full flex-shrink-0",
-    transitionClass,
     isMain ? "h-12 w-12" : isQuote ? "h-6 w-6" : "h-11 w-11",
     isQuote && "z-10"
   );
@@ -60,13 +58,11 @@ export const TweetCardHeader = ({
   );
   const nameClass = cn(
     "text-twitter-text-primary dark:text-twitter-dark-text-primary grow-0 min-w-0 overflow-hidden overflow-ellipsis text-nowrap flex-shrink-2",
-    transitionClass,
     isMain ? "text-[17px] font-bold" : "text-[15px] font-semibold",
     isQuote && "z-10"
   );
   const handleClass = cn(
     "text-twitter-text-secondary dark:text-twitter-dark-text-secondary text-[15px] flex-shrink-1",
-    transitionClass,
     (isReply || isQuote) && "ml-1",
     isQuote && "z-10"
   );

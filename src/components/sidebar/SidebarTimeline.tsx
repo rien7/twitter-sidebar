@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { RefObject, useMemo } from "react";
 import TweetCard from "@/components/tweet/TweetCard";
 import DeletedTweetCard from "@/components/tweet/DeletedTweetCard";
 import type { TweetLimitedAction, TweetResult } from "@/types/response";
@@ -17,7 +17,11 @@ interface SidebarTimelineProps {
   tweetRelation: TweetRelation | null;
   relateTweets: Record<string, TweetData> | null;
   status: SidebarTweetStatus;
-  onSelectTweet: (tweet: TweetResult, controllerData?: string | null) => void;
+  onSelectTweet: (
+    tweet: TweetResult,
+    controllerData?: string | null,
+    articleRef?: RefObject<HTMLElement | null>
+  ) => void;
 }
 
 type AncestorEntry =

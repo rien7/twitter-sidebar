@@ -39,6 +39,8 @@ function hasImmediateAuthorReply(
   );
 }
 
+const spineCache: Map<string, string[]> = new Map();
+
 /**
  * 计算“作者主干剪枝”路径。
  * @param rootId 起点 tweetId（一般是面板里的 main 推文）
@@ -51,6 +53,13 @@ export function buildAuthorSpine(
   relateTweets: Record<string, TweetData> | null
 ): string[] {
   if (!relateTweets || !rootAuthorId) return [rootId];
+  const key = `${rootId}-${rootAuthorId}-${Object.keys(relateTweets).join(
+    "-"
+  )}`;
+  const cache = spineCache.get(key);
+  if (cache && cache.length > 0) {
+    return cache;
+  }
 
   const path: string[] = [rootId];
   let cur = rootId;
@@ -101,5 +110,6 @@ export function buildAuthorSpine(
     break;
   }
 
+  spineCache.set(key, path);
   return path;
 }

@@ -17,7 +17,7 @@ import {
   useRef,
   useState,
 } from "react";
-import type { MouseEvent as ReactMouseEvent } from "react";
+import type { MouseEvent as ReactMouseEvent, RefObject } from "react";
 import type { TweetLimitedAction, TweetResult } from "@/types/response";
 import { useFlip } from "@/hooks/useFlip";
 import { useSidebarRoot } from "@/context/sidebarRoot";
@@ -58,7 +58,11 @@ const useTweetComposer = () => {
 interface TweetCardProps {
   tweet: TweetResult;
   variant?: "main" | "quote" | "reply";
-  onSelect?: (tweet: TweetResult, controllerData?: string | null) => void;
+  onSelect?: (
+    tweet: TweetResult,
+    controllerData?: string | null,
+    articleRef?: RefObject<HTMLElement | null>
+  ) => void;
   linkTop?: boolean;
   linkBottom?: boolean;
   controllerData?: string | null;
@@ -91,6 +95,7 @@ const TweetCard = ({
   const sidebarContentRefContext = useContext(SidebarContentRefContext);
   const headerRef = sidebarContentRefContext?.headerRef;
   const emptyAreaRef = sidebarContentRefContext?.emptyAreaRef;
+  const scrollAreaRef = sidebarContentRefContext?.scrollAreaRef;
   const sidebarContentContext = useContext(SidebarContentContext);
   const mainTweetId = sidebarContentContext?.mainTweetId;
   const previousMainTweetId = useRef<string | null>(null);
@@ -103,20 +108,6 @@ const TweetCard = ({
   const composerRef = useRef<ReplyComposerHandle>(null);
   const { composerOpen, onComposerExpand, onComposerCollapse, toggleComposer } =
     useTweetComposer();
-
-  const { refreshBaseline } = useFlip(
-    [
-      userAvatarRef,
-      { target: userNameRef, type: "text" },
-      { target: userHandleRef, type: "text" },
-      { target: bodyTextRef, type: "reflow" },
-      { target: cardRef, type: "reflow" },
-    ],
-    [variant, tweet.rest_id, composerOpen],
-    {
-      root: rootRef,
-    }
-  );
 
   const legacy = tweet.legacy;
   const media = legacy?.extended_entities?.media ?? legacy?.entities?.media;
@@ -191,19 +182,25 @@ const TweetCard = ({
     const timelineVersionChange =
       previousTimelineVersion.current !== timelineVersion;
 
-    if (mainTweetChange || timelineVersionChange) {
-      refreshBaseline();
-    }
-
     previousMainTweetId.current = mainTweetId ?? null;
     previousConversationId.current = conversationId ?? null;
     previousTimelineVersion.current = timelineVersion ?? null;
 
-    if (!isMain || !articleRef.current) return;
+    if (!isMain || !articleRef.current || !scrollAreaRef?.current) return;
     const changeMainInSameConversation = !conversationChange && mainTweetChange;
     const updateTweetDetail =
       timelineVersionChange && !conversationChange && !mainTweetChange;
     const firstOpen = firstOpenMainTweetId === mainTweetId;
+
+    const articleTop = articleRef.current.getBoundingClientRect().top;
+    const scrollAreaTop = scrollAreaRef.current.getBoundingClientRect().top;
+
+    if (articleTop - scrollAreaTop < 0) {
+      articleRef.current.scrollIntoView({
+        behavior: "instant",
+        block: "start",
+      });
+    }
 
     if (
       !changeMainInSameConversation &&
@@ -214,7 +211,7 @@ const TweetCard = ({
   }, [
     isMain,
     articleRef,
-    refreshBaseline,
+    scrollAreaRef,
     mainTweetId,
     conversationId,
     timelineVersion,
@@ -223,6 +220,20 @@ const TweetCard = ({
     previousTimelineVersion,
     firstOpenMainTweetId,
   ]);
+
+  useFlip(
+    [
+      userAvatarRef,
+      { target: userNameRef, type: "text" },
+      { target: userHandleRef, type: "text" },
+      { target: bodyTextRef, type: "reflow" },
+      { target: cardRef, type: "reflow" },
+    ],
+    [variant, tweet.rest_id, composerOpen, mainTweetId],
+    {
+      root: rootRef,
+    }
+  );
 
   useLayoutEffect(() => {
     if (composerOpen) {
@@ -235,7 +246,7 @@ const TweetCard = ({
   const handleCardClick = (event: ReactMouseEvent<HTMLElement>) => {
     if (!onSelect) return;
     if (event.defaultPrevented) return;
-    onSelect(tweet, controllerData ?? null);
+    onSelect(tweet, controllerData ?? null, articleRef);
   };
 
   const articleClass = cn(
