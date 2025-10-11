@@ -102,6 +102,7 @@ const TweetCard = ({
   const conversationId = sidebarContentContext?.conversationId;
   const previousConversationId = useRef<string | null>(null);
   const timelineVersion = sidebarContentContext?.timelineVersion;
+  const previousTimelineVersion = useRef<number | null>(null);
   const registerMainArticleRef = sidebarContentContext?.registerMainArticleRef;
   const mainArticleClientTopRef = sidebarContentContext?.mainArticleTopRef;
 
@@ -179,9 +180,12 @@ const TweetCard = ({
     const mainTweetChange = previousMainTweetId.current !== mainTweetId;
     const conversationChange =
       previousConversationId.current !== conversationId;
+    const timelineVersionChange =
+      previousTimelineVersion.current !== timelineVersion;
 
     previousMainTweetId.current = mainTweetId ?? null;
     previousConversationId.current = conversationId ?? null;
+    previousTimelineVersion.current = timelineVersion ?? null;
 
     if (!isMain || !articleRef.current || !scrollAreaRef?.current) return;
 
@@ -202,36 +206,36 @@ const TweetCard = ({
       });
     }
     registerMainArticleRef?.(articleRef);
+
+    // getTweetDetail response
+    if (!mainTweetChange && timelineVersionChange) {
+      if (
+        mainArticleClientTopRef &&
+        mainArticleClientTopRef?.current !== null
+      ) {
+        articleRef.current.scrollIntoView({
+          behavior: "instant",
+          block: "start",
+        });
+        scrollAreaRef.current.scrollBy({
+          behavior: "instant",
+          top: -mainArticleClientTopRef.current,
+        });
+        mainArticleClientTopRef.current = null;
+      }
+    }
   }, [
     isMain,
     articleRef,
     scrollAreaRef,
     mainTweetId,
     conversationId,
+    timelineVersion,
     previousMainTweetId,
     previousConversationId,
+    previousTimelineVersion,
     registerMainArticleRef,
-  ]);
-
-  useLayoutEffect(() => {
-    if (!isMain || !articleRef.current || !scrollAreaRef?.current) return;
-    if (mainArticleClientTopRef && mainArticleClientTopRef?.current !== null) {
-      articleRef.current.scrollIntoView({
-        behavior: "instant",
-        block: "start",
-      });
-      scrollAreaRef.current.scrollBy({
-        behavior: "instant",
-        top: -mainArticleClientTopRef.current,
-      });
-      mainArticleClientTopRef.current = null;
-    }
-  }, [
-    isMain,
-    articleRef,
-    scrollAreaRef,
     mainArticleClientTopRef,
-    timelineVersion,
   ]);
 
   useFlip(
