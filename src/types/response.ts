@@ -339,7 +339,7 @@ export interface UserResult {
     category?: Array<{ id: number; name: string; icon_name?: string }>;
   };
   privacy?: { protected?: boolean };
-  relationship_perspectives?: { following?: boolean };
+  relationship_perspectives?: { following?: boolean; followed_by: boolean };
   tipjar_settings?: {
     is_enabled?: boolean;
     ethereum_handle?: string;

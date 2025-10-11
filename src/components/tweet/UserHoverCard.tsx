@@ -123,6 +123,7 @@ const UserHoverCard = ({
 
   const followers = formatCount(user?.legacy?.followers_count ?? null);
   const following = formatCount(user?.legacy?.friends_count ?? null);
+  const followby = user?.relationship_perspectives?.followed_by;
   const derivedFollowing = Boolean(user?.relationship_perspectives?.following);
   const userId = user?.rest_id ?? (user?.id as string | undefined);
   const [isFollowing, setIsFollowing] = useState(derivedFollowing);
@@ -136,12 +137,6 @@ const UserHoverCard = ({
     null
   );
   const lastFollowingRequestUserIdRef = useRef<string | null>(null);
-  const effectiveFollowing = useMemo(() => {
-    if (typeof followingTotalCount === "number") {
-      return formatCount(followingTotalCount);
-    }
-    return following;
-  }, [followingTotalCount, following]);
 
   const clearTimers = () => {
     if (enterTimer.current !== null) {
@@ -303,8 +298,15 @@ const UserHoverCard = ({
               {renderWithTwemoji(name)}
             </div>
             {screenName ? (
-              <div className="text-twitter-text-secondary dark:text-twitter-dark-text-secondary text-[15px]">
-                @{screenName}
+              <div className="flex items-center">
+                <div className="text-twitter-text-secondary dark:text-twitter-dark-text-secondary text-[15px]">
+                  @{screenName}
+                </div>
+                {followby ? (
+                  <div className="dark:bg-[#202327] bg-[#eff3f4] text-[#536471] dark:text-[#71767b] font-medium leading-[12px] text-[11px] ml-[4px] px-[4px] py-[2px] rounded-[4px]">
+                    Follows you
+                  </div>
+                ) : undefined}
               </div>
             ) : null}
             {descriptionNodes.length > 0 ? (
@@ -317,9 +319,9 @@ const UserHoverCard = ({
               </div>
             ) : null}
           </div>
-          {(followers || effectiveFollowing) && (
+          {(followers || following) && (
             <div className="mt-3 flex gap-4 text-[15px]">
-              {effectiveFollowing ? (
+              {following ? (
                 <a
                   href={
                     screenName
@@ -331,7 +333,7 @@ const UserHoverCard = ({
                   className="text-twitter-text-secondary dark:text-twitter-dark-text-secondary hover:underline"
                 >
                   <span className="text-twitter-text-primary dark:text-twitter-dark-text-primary font-semibold">
-                    {effectiveFollowing}
+                    {following}
                   </span>{" "}
                   正在关注
                 </a>
