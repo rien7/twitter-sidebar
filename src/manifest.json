@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Twitter(X) Sidebar",
-  "version": "0.5.13",
+  "version": "0.5.14",
   "description": "Open tweets in sidebar",
   "host_permissions": [
     "https://x.com/*",
