@@ -182,6 +182,9 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(
       <form
         className={cn("w-full flex flex-col py-4", className)}
         onSubmit={handleSubmit}
+        onClick={(e) => {
+          e.stopPropagation();
+        }}
       >
         <div className="flex min-w-0 flex-1 flex-col gap-2">
           <ReplyComposerHeader screenName={screenName} />

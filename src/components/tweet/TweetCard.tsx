@@ -259,6 +259,7 @@ const TweetCard = ({
   const handleCardClick = (event: ReactMouseEvent<HTMLElement>) => {
     if (!onSelect) return;
     if (event.defaultPrevented) return;
+    if (mainTweetId === tweet.rest_id) return;
     onSelect(tweet, controllerData ?? null, articleRef);
   };
 
