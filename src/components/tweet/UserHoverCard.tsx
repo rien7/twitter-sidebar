@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Fragment,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import type { ReactNode, RefObject } from "react";
 import type { UrlEntity, UserResult } from "@/types/response";
 import { cn } from "@/utils/cn";
@@ -213,23 +220,28 @@ const UserHoverCard = ({
       ? "取消关注"
       : "正在关注"
     : "关注";
-  const handleFollow = useCallback(async () => {
-    if (!userId) return;
-    const previousState = isFollowing;
-    const nextState = !previousState;
-    setIsFollowing(nextState);
-    try {
-      if (previousState) {
-        await unfollowUser(userId);
-      } else {
-        setFromUnfollow(true);
-        await followUser(userId);
-      }
-    } catch (error) {
-      console.error("[TSB][Follow] 操作失败", error);
+  const handleFollow = useCallback(
+    async (e: React.MouseEvent) => {
+      if (!userId) return;
+      const previousState = isFollowing;
+      const nextState = !previousState;
       setIsFollowing(nextState);
-    }
-  }, [userId, isFollowing, setIsFollowing]);
+      e.stopPropagation();
+      e.preventDefault();
+      try {
+        if (previousState) {
+          await unfollowUser(userId);
+        } else {
+          setFromUnfollow(true);
+          await followUser(userId);
+        }
+      } catch (error) {
+        console.error("[TSB][Follow] 操作失败", error);
+        setIsFollowing(nextState);
+      }
+    },
+    [userId, isFollowing, setIsFollowing]
+  );
 
   const alignmentClass = placement === "right" ? "right-0" : "left-0";
 
@@ -373,10 +385,10 @@ const UserHoverCard = ({
                 Following by{" "}
                 {followingPreview.slice(0, 2).map((f, i) => {
                   return (
-                    <>
+                    <Fragment key={i}>
                       {renderWithTwemoji(f.name)}
                       {i === 0 ? ", " : undefined}
-                    </>
+                    </Fragment>
                   );
                 })}{" "}
                 {followingTotalCount > 2

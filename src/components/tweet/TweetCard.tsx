@@ -146,6 +146,7 @@ const TweetCard = ({
         variant="quote"
         controllerData={controllerData}
         limitedActions={null}
+        onSelect={onSelect}
       />
     </div>
   ) : null;
@@ -234,8 +235,6 @@ const TweetCard = ({
   const handleCardClick = (event: ReactMouseEvent<HTMLElement>) => {
     if (!onSelect) return;
     if (event.defaultPrevented) return;
-    const target = event.target as HTMLElement;
-    if (target.closest("a,button,video,audio,input,textarea,select")) return;
     onSelect(tweet, controllerData ?? null);
   };
 

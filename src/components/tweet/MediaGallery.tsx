@@ -2,11 +2,7 @@ import { useMediaOverlay } from "@/context/mediaOverlay";
 import { getHighResolutionUrl, selectVideoVariant } from "@/utils/media";
 import type { MediaOverlayItem } from "@/types/mediaOverlay";
 import type { MediaEntity } from "@/types/response";
-import type {
-  CSSProperties,
-  KeyboardEvent as ReactKeyboardEvent,
-  MouseEvent as ReactMouseEvent,
-} from "react";
+import type { CSSProperties, MouseEvent as ReactMouseEvent } from "react";
 import { cn } from "@/utils/cn";
 
 const MAX_MEDIA_HEIGHT = 320;
@@ -35,7 +31,7 @@ type MediaLayoutEntry = PhotoMediaLayoutEntry | VideoMediaLayoutEntry;
 
 interface MediaGalleryProps {
   media?: MediaEntity[];
-  variant?: "main" | "quote";
+  variant?: "main" | "other";
   onSelect?: () => void;
   className?: string;
 }
@@ -50,111 +46,111 @@ const MediaGallery = ({
   const overlayEnabled = !onSelect && mediaOverlay !== null;
 
   if (!media || media.length === 0) return null;
-  const containerRadius = variant === "quote" ? "rounded-xl" : "rounded-2xl";
+  const containerRadius = variant === "other" ? "rounded-xl" : "rounded-2xl";
 
-  const mediaEntries = media.reduce<MediaLayoutEntry[]>((accumulator, item, index) => {
-    const baseKey = item.media_key ?? `${item.id_str}-${index}`;
-    const typedMedia = item as MediaEntity & { ext_alt_text?: string };
-    const altText = typedMedia.ext_alt_text ?? baseKey ?? "tweet media";
+  const mediaEntries = media.reduce<MediaLayoutEntry[]>(
+    (accumulator, item, index) => {
+      const baseKey = item.media_key ?? `${item.id_str}-${index}`;
+      const typedMedia = item as MediaEntity & { ext_alt_text?: string };
+      const altText = typedMedia.ext_alt_text ?? baseKey ?? "tweet media";
 
-    if (item.type === "photo") {
-      const width =
-        typedMedia.original_info?.width ??
-        typedMedia.sizes?.large?.w ??
-        typedMedia.sizes?.medium?.w ??
-        null;
-      const height =
-        typedMedia.original_info?.height ??
-        typedMedia.sizes?.large?.h ??
-        typedMedia.sizes?.medium?.h ??
-        null;
-      const aspectRatio = width && height ? `${width} / ${height}` : "1 / 1";
-      const background =
-        typedMedia.media_url_https ??
-        typedMedia.expanded_url ??
-        typedMedia.url ??
-        null;
-      const linkHref =
-        typedMedia.expanded_url ??
-        typedMedia.url ??
-        background ??
-        "#";
-      const overlayItem: MediaOverlayItem | null =
-        overlayEnabled && background
-          ? (() => {
-              const highRes = getHighResolutionUrl(background);
-              return {
-                kind: "photo",
-                key: baseKey,
-                previewSrc: background,
-                fullSrc: highRes !== background ? highRes : undefined,
-                alt: altText,
-              } satisfies MediaOverlayItem;
-            })()
+      if (item.type === "photo") {
+        const width =
+          typedMedia.original_info?.width ??
+          typedMedia.sizes?.large?.w ??
+          typedMedia.sizes?.medium?.w ??
+          null;
+        const height =
+          typedMedia.original_info?.height ??
+          typedMedia.sizes?.large?.h ??
+          typedMedia.sizes?.medium?.h ??
+          null;
+        const aspectRatio = width && height ? `${width} / ${height}` : "1 / 1";
+        const background =
+          typedMedia.media_url_https ??
+          typedMedia.expanded_url ??
+          typedMedia.url ??
+          null;
+        const linkHref =
+          typedMedia.expanded_url ?? typedMedia.url ?? background ?? "#";
+        const overlayItem: MediaOverlayItem | null =
+          overlayEnabled && background
+            ? (() => {
+                const highRes = getHighResolutionUrl(background);
+                return {
+                  kind: "photo",
+                  key: baseKey,
+                  previewSrc: background,
+                  fullSrc: highRes !== background ? highRes : undefined,
+                  alt: altText,
+                } satisfies MediaOverlayItem;
+              })()
+            : null;
+
+        accumulator.push({
+          type: "photo",
+          key: baseKey,
+          altText,
+          aspectRatio,
+          background,
+          linkHref,
+          overlayItem,
+        });
+
+        return accumulator;
+      }
+
+      if (item.type === "video" || item.type === "animated_gif") {
+        const isGif = item.type === "animated_gif";
+        const poster =
+          typedMedia.media_url_https ??
+          typedMedia.expanded_url ??
+          typedMedia.url ??
+          undefined;
+        const variantSource = selectVideoVariant(typedMedia) ?? null;
+        const aspectRatio = typedMedia.video_info?.aspect_ratio
+          ? `${typedMedia.video_info.aspect_ratio[0]} / ${typedMedia.video_info.aspect_ratio[1]}`
+          : (() => {
+              const width =
+                typedMedia.original_info?.width ??
+                typedMedia.sizes?.large?.w ??
+                typedMedia.sizes?.medium?.w ??
+                null;
+              const height =
+                typedMedia.original_info?.height ??
+                typedMedia.sizes?.large?.h ??
+                typedMedia.sizes?.medium?.h ??
+                null;
+              if (width && height) return `${width} / ${height}`;
+              return "16 / 9";
+            })();
+        const overlayItem: MediaOverlayItem | null = overlayEnabled
+          ? {
+              kind: "video",
+              key: baseKey,
+              alt: altText,
+              poster,
+              source: variantSource,
+              isGif,
+            }
           : null;
 
-      accumulator.push({
-        type: "photo",
-        key: baseKey,
-        altText,
-        aspectRatio,
-        background,
-        linkHref,
-        overlayItem,
-      });
+        accumulator.push({
+          type: "video",
+          key: baseKey,
+          altText,
+          aspectRatio,
+          poster,
+          source: variantSource,
+          isGif,
+          overlayItem,
+        });
+      }
 
       return accumulator;
-    }
-
-    if (item.type === "video" || item.type === "animated_gif") {
-      const isGif = item.type === "animated_gif";
-      const poster =
-        typedMedia.media_url_https ??
-        typedMedia.expanded_url ??
-        typedMedia.url ??
-        undefined;
-      const variantSource = selectVideoVariant(typedMedia) ?? null;
-      const aspectRatio = typedMedia.video_info?.aspect_ratio
-        ? `${typedMedia.video_info.aspect_ratio[0]} / ${typedMedia.video_info.aspect_ratio[1]}`
-        : (() => {
-            const width =
-              typedMedia.original_info?.width ??
-              typedMedia.sizes?.large?.w ??
-              typedMedia.sizes?.medium?.w ??
-              null;
-            const height =
-              typedMedia.original_info?.height ??
-              typedMedia.sizes?.large?.h ??
-              typedMedia.sizes?.medium?.h ??
-              null;
-            if (width && height) return `${width} / ${height}`;
-            return "16 / 9";
-          })();
-      const overlayItem: MediaOverlayItem | null = overlayEnabled
-        ? {
-            kind: "video",
-            key: baseKey,
-            alt: altText,
-            poster,
-            source: variantSource,
-            isGif,
-          }
-        : null;
-
-      accumulator.push({
-        type: "video",
-        key: baseKey,
-        altText,
-        aspectRatio,
-        poster,
-        source: variantSource,
-        isGif,
-        overlayItem,
-      });
-    }
-
-    return accumulator;
-  }, []);
+    },
+    []
+  );
 
   if (mediaEntries.length === 0) return null;
 
@@ -182,13 +178,18 @@ const MediaGallery = ({
     event: ReactMouseEvent<HTMLElement>,
     entry: MediaLayoutEntry
   ) => {
-    if (overlayEnabled && overlayItems && entry.overlayItem) {
+    if (
+      variant === "main" &&
+      overlayEnabled &&
+      overlayItems &&
+      entry.overlayItem
+    ) {
       event.preventDefault();
       mediaOverlay?.openMedia(entry.overlayItem, overlayItems);
       return;
     }
 
-    if (onSelect && entry.type === "video") {
+    if (onSelect) {
       event.preventDefault();
       onSelect();
     }
@@ -257,13 +258,6 @@ const MediaGallery = ({
         onClick={(event) => handleMediaClick(event, entry)}
         role={onSelect ? "button" : undefined}
         tabIndex={onSelect ? 0 : undefined}
-        onKeyDown={(event: ReactKeyboardEvent<HTMLDivElement>) => {
-          if (!onSelect) return;
-          if (event.key === "Enter" || event.key === " ") {
-            event.preventDefault();
-            onSelect();
-          }
-        }}
       >
         <video
           className="h-full w-full"
@@ -274,10 +268,7 @@ const MediaGallery = ({
           muted={entry.isGif}
         >
           {entry.source ? (
-            <source
-              src={entry.source.url}
-              type={entry.source.content_type}
-            />
+            <source src={entry.source.url} type={entry.source.content_type} />
           ) : null}
         </video>
         {onSelect ? (

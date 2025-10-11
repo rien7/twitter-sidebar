@@ -539,7 +539,7 @@ export const MediaOverlayProvider = ({ children }: { children: ReactNode }) => {
                     }}
                     poster={activeMedia.poster}
                     controls={!activeMedia.isGif}
-                    autoPlay={activeMedia.isGif}
+                    autoPlay={true}
                     loop={activeMedia.isGif}
                     muted={activeMedia.isGif}
                     onClick={(event) => {

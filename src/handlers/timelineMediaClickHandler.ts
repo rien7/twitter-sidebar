@@ -65,6 +65,13 @@ export const handleTimelineMediaClick = (
 
   if (checkOnly) return false;
 
+  const videoTarget = mediaTarget.querySelector("video");
+  if (videoTarget) {
+    if (videoTarget.played) {
+      videoTarget.pause();
+    }
+  }
+
   const activeKey = resolvedItem.key;
   const opened = openTweetInSidebar(inlineContext?.tweetId ?? tweetId);
   if (!opened) {

@@ -75,14 +75,15 @@ export const TweetCardContent = ({
     isReply && "-mt-4 ml-11 pl-2",
     isQuote && "z-10"
   );
-  const galleryVariant = isMain ? "main" : "quote";
+  const galleryVariant = isMain ? "main" : "other";
   const isProtected = getProtected(getUserFromTweet(tweet));
   const showMedia =
     showMediaGallery && Array.isArray(media) && media.length > 0;
   const showPoll = Boolean(poll);
   const showCardPreview = Boolean(cardInfo);
   const showQuote = Boolean(quotedTweetNode);
-  const hasSupplementary = showMedia || showPoll || showCardPreview || showQuote;
+  const hasSupplementary =
+    showMedia || showPoll || showCardPreview || showQuote;
   const disabledActions = useMemo(() => {
     const disabled = new Set<"reply" | "retweet">();
     if (isProtected) {
@@ -126,7 +127,7 @@ export const TweetCardContent = ({
               variant={galleryVariant}
               className={cn(isQuote && "z-10")}
               onSelect={
-                isReply
+                isReply || isQuote
                   ? () => onSelect?.(tweet, controllerData ?? null)
                   : undefined
               }
