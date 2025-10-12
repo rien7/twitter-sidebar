@@ -110,7 +110,11 @@ export const TweetCardContent = ({
       </div>
       {hasSupplementary && (
         <div
-          className={cn("mt-3 flex flex-col gap-1", isReply && "ml-11 pl-2")}
+          className={cn(
+            "mt-3 flex flex-col gap-1",
+            isReply && "ml-11 pl-2",
+            isQuote && "z-10"
+          )}
           ref={cardRef}
         >
           {showPoll ? (

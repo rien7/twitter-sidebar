@@ -99,7 +99,7 @@ export const TweetCardHeader = ({
           <UserHoverCard
             user={user}
             ref={userNameRef}
-            className="items-center min-w-0"
+            className={cn("items-center min-w-0", isQuote && "z-10")}
           >
             <span className={nameClass}>{renderWithTwemoji(name)}</span>
             <span className="inline-flex ml-0.5 items-center justify-center h-5 gap-0.5 shrink-0">
