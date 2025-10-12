@@ -12,11 +12,15 @@ import { getAvatarFromUser, getUserFromTweet } from "@/utils/responseData";
 import { getCachedAvatarForTweet } from "@/store/avatarStore";
 import { renderWithTwemoji } from "@/utils/twemoji";
 
-const countFormatter = new Intl.NumberFormat("zh-CN");
+const fullCountFormatter = new Intl.NumberFormat();
+const shortCountFormatter = new Intl.NumberFormat(undefined, {
+  notation: "compact",
+  compactDisplay: "short",
+});
 
 export const formatCount = (value?: number | null): string | null => {
   if (typeof value !== "number" || Number.isNaN(value)) return null;
-  return countFormatter.format(value);
+  return shortCountFormatter.format(value);
 };
 
 export const getFullTextAndEntities = (
@@ -364,9 +368,8 @@ export const extractAvatar = (tweet: TweetResult): string | undefined => {
   );
 };
 
-export const extractAvatarCache = (
-  tweet: TweetResult
-): string | undefined => getCachedAvatarForTweet(tweet, "x96");
+export const extractAvatarCache = (tweet: TweetResult): string | undefined =>
+  getCachedAvatarForTweet(tweet, "x96");
 
 export const extractName = (
   tweet: TweetResult
@@ -382,7 +385,8 @@ export const extractName = (
     | undefined;
   return {
     name: user?.legacy?.name ?? user?.core?.name ?? "未知用户",
-    screenName: user?.legacy?.screen_name ?? user?.core?.screen_name ?? "unknown",
+    screenName:
+      user?.legacy?.screen_name ?? user?.core?.screen_name ?? "unknown",
   };
 };
 
@@ -438,7 +442,7 @@ export const formatDateTime = (
 export const extractViews = (tweet: TweetResult): string | null => {
   const count = Number(tweet.views?.count ?? "");
   if (!Number.isFinite(count) || count <= 0) return null;
-  return `${countFormatter.format(count)} 次浏览`;
+  return `${fullCountFormatter.format(count)} 次浏览`;
 };
 
 export const parseSource = (

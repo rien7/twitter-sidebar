@@ -18,6 +18,7 @@ import {
   BookmarkActiveIcon,
   LikeAnimationIcon,
 } from "@/icons/TweetActionIcons";
+import { cn } from "@/utils/cn";
 
 type ActionKey = "reply" | "retweet" | "like" | "bookmark" | "view";
 const TWEET_ACTION_ICONS = {
@@ -55,9 +56,6 @@ const ACTION_ICON_SIZE: Record<"sm" | "md", number> = {
   sm: 18.75,
   md: 22.5,
 };
-
-const cn = (...classes: Array<string | false | null | undefined>) =>
-  classes.filter(Boolean).join(" ");
 
 const adjustCount = (value: number | null, delta: 1 | -1) => {
   const base = typeof value === "number" ? value : 0;
@@ -278,12 +276,12 @@ const TweetActions = ({
       count: counts.like,
       active: actives.like,
     },
-    {
-      key: "view",
-      label: "浏览",
-      color: { r: 29, g: 155, b: 240 },
-      count: counts.view,
-    },
+    // {
+    //   key: "view",
+    //   label: "浏览",
+    //   color: { r: 29, g: 155, b: 240 },
+    //   count: counts.view,
+    // },
     {
       key: "bookmark",
       label: "书签",
