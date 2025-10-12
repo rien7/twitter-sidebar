@@ -1,96 +1,98 @@
-import { useEffect, useMemo, useRef } from "react";
-import { SidebarContent } from "./SidebarContent";
+import type { CSSProperties, RefObject } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
+
 import {
   SIDEBAR_COLLAPSED_MAX_WIDTH,
   SIDEBAR_WIDTH_COLLAPSED,
   SIDEBAR_WIDTH_MAX,
   SIDEBAR_WIDTH_MIN,
-} from "@/constants/layout";
-import { useColorScheme } from "@/hooks/useColorScheme";
-import { useScrollBoundaryLock } from "@/hooks/useScrollBoundaryLock";
-import { useSidebarResize } from "@/hooks/useSidebarResize";
-import { sidebarStore } from "@/store/sidebarStore";
-import { useSidebarStore } from "@/hooks/useSidebarStore";
-import { useMediaOverlay } from "@/context/mediaOverlay";
-import type { CSSProperties, RefObject } from "react";
-import { cn } from "@/utils/cn";
-import { SidebarRootContext } from "@/context/sidebarRoot";
-import { SidebarContentContext } from "@/context/SidebarTimelineContext";
+} from '@/constants/layout'
+import { useMediaOverlay } from '@/context/mediaOverlay'
+import { SidebarRootContext } from '@/context/sidebarRoot'
+import { SidebarContentContext } from '@/context/SidebarTimelineContext'
+import { useColorScheme } from '@/hooks/useColorScheme'
+import { useScrollBoundaryLock } from '@/hooks/useScrollBoundaryLock'
+import { useSidebarResize } from '@/hooks/useSidebarResize'
+import { useSidebarStore } from '@/hooks/useSidebarStore'
+import { sidebarStore } from '@/store/sidebarStore'
+import { cn } from '@/utils/cn'
 
-export const SidebarSurface = () => {
-  const { isDark, background, accent } = useColorScheme();
-  const { isOpen, pinned, width, tweet, tweetRelation, relateTweets, status } =
-    useSidebarStore();
+import { SidebarContent } from './SidebarContent'
 
-  const rootRef = useRef<HTMLDivElement | null>(null);
-  const scrollAreaRef = useRef<HTMLDivElement>(null!);
-  const mainArticleRef = useRef<HTMLElement | null>(null);
+export function SidebarSurface() {
+  const { isDark, background, accent } = useColorScheme()
+  const { isOpen, pinned, width, tweet, tweetRelation, relateTweets, status }
+    = useSidebarStore()
+
+  const rootRef = useRef<HTMLDivElement | null>(null)
+  const scrollAreaRef = useRef<HTMLDivElement>(null!)
+  const mainArticleRef = useRef<HTMLElement | null>(null)
   const registerMainArticleRef = (ref: RefObject<HTMLElement | null>) => {
-    mainArticleRef.current = ref.current;
-  };
-  const mainArticleClientTopRef = useRef<number | null>(null);
+    mainArticleRef.current = ref.current
+  }
+  const mainArticleClientTopRef = useRef<number | null>(null)
 
-  const mediaOverlay = useMediaOverlay();
-  const closeMedia = mediaOverlay?.closeMedia;
-  const activeMedia = mediaOverlay?.activeMedia;
-  const isSidebarCollapsed = mediaOverlay?.isSidebarCollapsed ?? false;
+  const mediaOverlay = useMediaOverlay()
+  const closeMedia = mediaOverlay?.closeMedia
+  const activeMedia = mediaOverlay?.activeMedia
+  const isSidebarCollapsed = mediaOverlay?.isSidebarCollapsed ?? false
 
-  const mainTweetId = tweet?.result.rest_id ?? null;
-  const conversationId = tweet?.result.legacy?.conversation_id_str ?? null;
-  const timelineVersionRef = useRef<number>(0);
-  const previousMainTweetIdRef = useRef<string | null>(null);
+  const mainTweetId = tweet?.result.rest_id ?? null
+  const conversationId = tweet?.result.legacy?.conversation_id_str ?? null
+  const timelineVersionRef = useRef<number>(0)
+  const previousMainTweetIdRef = useRef<string | null>(null)
 
   if (mainArticleRef.current && scrollAreaRef.current) {
-    const articleTop = mainArticleRef.current.getBoundingClientRect().top;
-    const scrollTop = scrollAreaRef.current.getBoundingClientRect().top;
-    mainArticleClientTopRef.current = articleTop - scrollTop;
+    const articleTop = mainArticleRef.current.getBoundingClientRect().top
+    const scrollTop = scrollAreaRef.current.getBoundingClientRect().top
+    mainArticleClientTopRef.current = articleTop - scrollTop
   } else {
-    mainArticleClientTopRef.current = null;
+    mainArticleClientTopRef.current = null
   }
 
   useEffect(() => {
-    timelineVersionRef.current += 1;
-  }, [tweet, tweetRelation]);
+    timelineVersionRef.current += 1
+  }, [tweet, tweetRelation])
 
   useEffect(() => {
     if (!isOpen) {
-      mainArticleRef.current = null;
-      mainArticleClientTopRef.current = null;
+      mainArticleRef.current = null
+      mainArticleClientTopRef.current = null
     }
-  }, [isOpen]);
+  }, [isOpen])
 
-  const { isResizing, handlePointerDown, handlePointerOver, handlePointerOut } =
-    useSidebarResize(width, !isSidebarCollapsed);
-  useScrollBoundaryLock(scrollAreaRef, isOpen);
+  const { isResizing, handlePointerDown, handlePointerOver, handlePointerOut }
+    = useSidebarResize(width, !isSidebarCollapsed)
+  useScrollBoundaryLock(scrollAreaRef, isOpen)
 
   useEffect(() => {
     if (previousMainTweetIdRef.current !== mainTweetId) {
       if (activeMedia && closeMedia) {
-        closeMedia();
+        closeMedia()
       }
     }
-    previousMainTweetIdRef.current = mainTweetId;
-  }, [mainTweetId, activeMedia, closeMedia]);
+    previousMainTweetIdRef.current = mainTweetId
+  }, [mainTweetId, activeMedia, closeMedia])
 
   useEffect(() => {
     if (!isOpen && activeMedia && closeMedia) {
-      closeMedia();
+      closeMedia()
     }
-  }, [isOpen, activeMedia, closeMedia]);
+  }, [isOpen, activeMedia, closeMedia])
 
   const sidebarWidth = useMemo(
     () =>
       isSidebarCollapsed ? SIDEBAR_WIDTH_COLLAPSED : `min(100vw, ${width}px)`,
-    [isSidebarCollapsed, width]
-  );
+    [isSidebarCollapsed, width],
+  )
 
   const sidebarMaxWidth = useMemo(
     () =>
       isSidebarCollapsed
         ? SIDEBAR_COLLAPSED_MAX_WIDTH
         : `${SIDEBAR_WIDTH_MAX}px`,
-    [isSidebarCollapsed]
-  );
+    [isSidebarCollapsed],
+  )
 
   return (
     <SidebarRootContext value={rootRef}>
@@ -106,30 +108,32 @@ export const SidebarSurface = () => {
         <div
           ref={rootRef}
           className={cn(
-            "pointer-events-none fixed inset-0 z-[2147483645]",
-            isDark && "dark"
+            'pointer-events-none fixed inset-0 z-[2147483645]',
+            isDark && 'dark',
           )}
           style={
             {
-              "--color-twitter-background-surface": background,
-              "--color-twitter-accent": accent,
+              '--color-twitter-background-surface': background,
+              '--color-twitter-accent': accent,
             } as CSSProperties
           }
         >
-          {isOpen && !pinned && !activeMedia ? (
-            <div
-              className="pointer-events-auto absolute inset-0 bg-black/30"
-              onClick={() => sidebarStore.close()}
-              aria-label="关闭侧边栏遮罩"
-            />
-          ) : null}
+          {isOpen && !pinned && !activeMedia
+            ? (
+                <div
+                  className="pointer-events-auto absolute inset-0 bg-black/30"
+                  onClick={() => sidebarStore.close()}
+                  aria-label="关闭侧边栏遮罩"
+                />
+              )
+            : null}
           <div
             className={cn(
-              "pointer-events-auto absolute inset-y-0 right-0 translate-y-0",
+              'pointer-events-auto absolute inset-y-0 right-0 translate-y-0',
               isResizing
-                ? "transition-none"
-                : "transition-all duration-300 ease-in-out",
-              isOpen ? "translate-x-0" : "translate-x-full"
+                ? 'transition-none'
+                : 'transition-all duration-300 ease-in-out',
+              isOpen ? 'translate-x-0' : 'translate-x-full',
             )}
             data-flip-base-layer
             style={{ width: sidebarWidth, maxWidth: sidebarMaxWidth }}
@@ -139,26 +143,28 @@ export const SidebarSurface = () => {
               aria-hidden="true"
               className="pointer-events-none absolute inset-0 z-10"
             />
-            {!isSidebarCollapsed ? (
-              <div
-                role="slider"
-                aria-valuemin={SIDEBAR_WIDTH_MIN}
-                aria-valuemax={SIDEBAR_WIDTH_MAX}
-                aria-valuenow={width}
-                aria-orientation="vertical"
-                aria-label="调整侧边栏宽度"
-                tabIndex={0}
-                className={cn(
-                  "absolute left-0 -translate-x-1/2 top-0 z-50 h-full w-1 select-none transition-colors",
-                  isResizing
-                    ? "bg-twitter-accent"
-                    : "bg-transparent hover:bg-twitter-accent"
-                )}
-                onPointerDown={handlePointerDown}
-                onPointerOver={() => handlePointerOver(width)}
-                onPointerOut={handlePointerOut}
-              />
-            ) : null}
+            {!isSidebarCollapsed
+              ? (
+                  <div
+                    role="slider"
+                    aria-valuemin={SIDEBAR_WIDTH_MIN}
+                    aria-valuemax={SIDEBAR_WIDTH_MAX}
+                    aria-valuenow={width}
+                    aria-orientation="vertical"
+                    aria-label="调整侧边栏宽度"
+                    tabIndex={0}
+                    className={cn(
+                      'absolute left-0 -translate-x-1/2 top-0 z-50 h-full w-1 select-none transition-colors',
+                      isResizing
+                        ? 'bg-twitter-accent'
+                        : 'bg-transparent hover:bg-twitter-accent',
+                    )}
+                    onPointerDown={handlePointerDown}
+                    onPointerOver={() => handlePointerOver(width)}
+                    onPointerOut={handlePointerOut}
+                  />
+                )
+              : null}
             <SidebarContent
               isOpen={isOpen}
               scrollAreaRef={scrollAreaRef}
@@ -174,5 +180,5 @@ export const SidebarSurface = () => {
         </div>
       </SidebarContentContext>
     </SidebarRootContext>
-  );
-};
+  )
+}

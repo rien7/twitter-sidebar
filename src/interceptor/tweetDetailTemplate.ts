@@ -1,6 +1,7 @@
-import { buildGraphqlHeaders, sanitizeHeaders } from "./headerUtils";
-import { TWEET_QUERY_OPERATIONS } from "@common/queryId";
-import type { CapturedRequest, TweetDetailTemplate } from "@/types/interceptor";
+import { TWEET_QUERY_OPERATIONS } from '@/common/queryId'
+import type { CapturedRequest, TweetDetailTemplate } from '@/types/interceptor'
+
+import { buildGraphqlHeaders, sanitizeHeaders } from './headerUtils'
 
 /**
  * Default TweetDetail feature switches. We hydrate these using the latest captured request so that
@@ -45,7 +46,7 @@ export const DEFAULT_TWEET_DETAIL_FEATURES: Record<string, boolean> = {
   verified_phone_label_enabled: false,
   vibe_api_enabled: true,
   view_counts_everywhere_api_enabled: true,
-};
+}
 
 /**
  * Default field toggles used when we do not have fresher data from a captured request.
@@ -58,20 +59,20 @@ export const DEFAULT_TWEET_DETAIL_FIELD_TOGGLES: Record<string, boolean> = {
   withDisallowedReplyControls: false,
   withGrokAnalyze: false,
   withSawaraEnabled: false,
-};
+}
 
 const PRESET_TWEET_DETAIL_TEMPLATE: TweetDetailTemplate = {
-  url: `/i/api/graphql/${TWEET_QUERY_OPERATIONS["tweet_detail"].id}/TweetDetail`,
-  method: "GET",
+  url: `/i/api/graphql/${TWEET_QUERY_OPERATIONS['tweet_detail'].id}/TweetDetail`,
+  method: 'GET',
   headers: {
-    accept: "*/*",
-    "content-type": "application/json",
+    'accept': '*/*',
+    'content-type': 'application/json',
   },
   variables: {
-    focalTweetId: "",
+    focalTweetId: '',
     includePromotedContent: true,
-    rankingMode: "Relevance",
-    referrer: "Home",
+    rankingMode: 'Relevance',
+    referrer: 'Home',
     withBirdwatchNotes: true,
     withCommunity: true,
     withQuickPromoteEligibilityTweetFields: true,
@@ -80,39 +81,39 @@ const PRESET_TWEET_DETAIL_TEMPLATE: TweetDetailTemplate = {
   },
   features: DEFAULT_TWEET_DETAIL_FEATURES,
   fieldToggles: DEFAULT_TWEET_DETAIL_FIELD_TOGGLES,
-};
+}
 
-let tweetDetailTemplate: TweetDetailTemplate | null = null;
+let tweetDetailTemplate: TweetDetailTemplate | null = null
 
 const decodeURIComponentSafe = (value: string): string => {
   try {
-    return decodeURIComponent(value);
+    return decodeURIComponent(value)
   } catch {
-    return value;
+    return value
   }
-};
+}
 
 const parseTemplateFromRequest = (
-  request: CapturedRequest
+  request: CapturedRequest,
 ): TweetDetailTemplate | null => {
   try {
-    const url = new URL(request.url, window.location.origin);
-    const method = request.method || "GET";
-    let variables: Record<string, unknown> = {};
-    let features: Record<string, unknown> = DEFAULT_TWEET_DETAIL_FEATURES;
-    let fieldToggles: Record<string, unknown> =
-      DEFAULT_TWEET_DETAIL_FIELD_TOGGLES;
+    const url = new URL(request.url, window.location.origin)
+    const method = request.method || 'GET'
+    let variables: Record<string, unknown> = {}
+    let features: Record<string, unknown> = DEFAULT_TWEET_DETAIL_FEATURES
+    let fieldToggles: Record<string, unknown>
+      = DEFAULT_TWEET_DETAIL_FIELD_TOGGLES
 
-    if (method === "GET") {
-      const variablesParam = url.searchParams.get("variables");
-      const featuresParam = url.searchParams.get("features");
-      const fieldTogglesParam = url.searchParams.get("fieldToggles");
+    if (method === 'GET') {
+      const variablesParam = url.searchParams.get('variables')
+      const featuresParam = url.searchParams.get('features')
+      const fieldTogglesParam = url.searchParams.get('fieldToggles')
       if (variablesParam)
-        variables = JSON.parse(decodeURIComponentSafe(variablesParam));
+        variables = JSON.parse(decodeURIComponentSafe(variablesParam))
       if (featuresParam)
-        features = JSON.parse(decodeURIComponentSafe(featuresParam));
+        features = JSON.parse(decodeURIComponentSafe(featuresParam))
       if (fieldTogglesParam)
-        fieldToggles = JSON.parse(decodeURIComponentSafe(fieldTogglesParam));
+        fieldToggles = JSON.parse(decodeURIComponentSafe(fieldTogglesParam))
       return {
         url: `${url.origin}${url.pathname}`,
         method,
@@ -120,14 +121,14 @@ const parseTemplateFromRequest = (
         variables: variables ?? {},
         features: features ?? DEFAULT_TWEET_DETAIL_FEATURES,
         fieldToggles: fieldToggles ?? DEFAULT_TWEET_DETAIL_FIELD_TOGGLES,
-      };
+      }
     }
 
-    const body = request.body ?? "";
-    const parsed = body ? JSON.parse(body) : {};
-    variables = parsed.variables ?? {};
-    features = parsed.features ?? DEFAULT_TWEET_DETAIL_FEATURES;
-    fieldToggles = parsed.fieldToggles ?? DEFAULT_TWEET_DETAIL_FIELD_TOGGLES;
+    const body = request.body ?? ''
+    const parsed = body ? JSON.parse(body) : {}
+    variables = parsed.variables ?? {}
+    features = parsed.features ?? DEFAULT_TWEET_DETAIL_FEATURES
+    fieldToggles = parsed.fieldToggles ?? DEFAULT_TWEET_DETAIL_FIELD_TOGGLES
     return {
       url: request.url,
       method,
@@ -135,90 +136,90 @@ const parseTemplateFromRequest = (
       variables,
       features,
       fieldToggles,
-    };
+    }
   } catch (error) {
-    console.warn("[TSB][TweetDetail] 无法解析请求模板", error);
-    return null;
+    console.warn('[TSB][TweetDetail] 无法解析请求模板', error)
+    return null
   }
-};
+}
 
 /**
  * Store the latest TweetDetail template so future requests can reuse the same parameters.
  */
 export const updateTweetDetailTemplate = (request: CapturedRequest) => {
-  const template = parseTemplateFromRequest(request);
+  const template = parseTemplateFromRequest(request)
   if (template) {
-    tweetDetailTemplate = template;
+    tweetDetailTemplate = template
   }
-};
+}
 
 /**
  * Execute a TweetDetail GraphQL request using the freshest template and headers we have observed.
  */
 export const performTweetDetailRequest = async (
   tweetId: string,
-  controllerData?: string | null
+  controllerData?: string | null,
 ) => {
-  const template = tweetDetailTemplate ?? PRESET_TWEET_DETAIL_TEMPLATE;
+  const template = tweetDetailTemplate ?? PRESET_TWEET_DETAIL_TEMPLATE
   const templateVariables = { ...(template.variables ?? {}) } as Record<
     string,
     unknown
-  >;
-  delete templateVariables.controller_data;
-  delete templateVariables.focalTweetId;
+  >
+  delete templateVariables.controller_data
+  delete templateVariables.focalTweetId
   const variables: Record<string, unknown> = {
     ...templateVariables,
     focalTweetId: tweetId,
-  };
+  }
   if (controllerData) {
-    variables.controller_data = controllerData;
+    variables.controller_data = controllerData
   }
 
-  const headers = buildGraphqlHeaders(template.headers);
+  const headers = buildGraphqlHeaders(template.headers)
 
-  if ((template.method ?? "POST").toUpperCase() === "GET") {
-    const url = new URL(template.url, window.location.origin);
-    url.searchParams.set("variables", JSON.stringify(variables));
+  if ((template.method ?? 'POST').toUpperCase() === 'GET') {
+    const url = new URL(template.url, window.location.origin)
+    url.searchParams.set('variables', JSON.stringify(variables))
     url.searchParams.set(
-      "features",
-      JSON.stringify(template.features ?? DEFAULT_TWEET_DETAIL_FEATURES)
-    );
+      'features',
+      JSON.stringify(template.features ?? DEFAULT_TWEET_DETAIL_FEATURES),
+    )
     url.searchParams.set(
-      "fieldToggles",
+      'fieldToggles',
       JSON.stringify(
-        template.fieldToggles ?? DEFAULT_TWEET_DETAIL_FIELD_TOGGLES
-      )
-    );
-    const finalHeaders = new Headers();
+        template.fieldToggles ?? DEFAULT_TWEET_DETAIL_FIELD_TOGGLES,
+      ),
+    )
+    const finalHeaders = new Headers()
     for (const [key, value] of Object.entries(headers)) {
-      finalHeaders.set(key, value);
+      finalHeaders.set(key, value)
     }
 
     const response = await fetch(url.toString(), {
-      method: "GET",
-      credentials: "include",
+      method: 'GET',
+      credentials: 'include',
       headers: finalHeaders,
-    });
+    })
     if (!response.ok) {
-      throw new Error(`TweetDetail 请求失败，状态码 ${response.status}`);
+      throw new Error(`TweetDetail 请求失败，状态码 ${response.status}`)
     }
-    return response.json();
+    return response.json()
   }
 
-  const finalHeaders = new Headers(headers);
+  const finalHeaders = new Headers(headers)
 
   const response = await fetch(template.url, {
-    method: template.method ?? "POST",
-    credentials: "include",
+    method: template.method ?? 'POST',
+    credentials: 'include',
     headers: finalHeaders,
     body: JSON.stringify({
       variables,
       features: template.features ?? DEFAULT_TWEET_DETAIL_FEATURES,
       fieldToggles: template.fieldToggles ?? DEFAULT_TWEET_DETAIL_FIELD_TOGGLES,
     }),
-  });
+  })
   if (!response.ok) {
-    throw new Error(`TweetDetail 请求失败，状态码 ${response.status}`);
+    throw new Error(`TweetDetail 请求失败，状态码 ${response.status}`)
   }
-  return response.json();
-};
+  return response.json()
+}

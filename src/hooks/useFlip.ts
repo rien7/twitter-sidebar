@@ -1,4 +1,4 @@
-import { RefObject, useCallback, useLayoutEffect, useRef } from "react";
+import { RefObject, useCallback, useLayoutEffect, useRef } from 'react'
 
 /**
  * FLIP hook with 3 modes:
@@ -12,69 +12,69 @@ import { RefObject, useCallback, useLayoutEffect, useRef } from "react";
  * - Honors reduced motion.
  */
 
-export type Target = string | HTMLElement | RefObject<HTMLElement | null>;
-export type FlipType = "scale" | "text" | "reflow";
+export type Target = string | HTMLElement | RefObject<HTMLElement | null>
+export type FlipType = 'scale' | 'text' | 'reflow'
 
 export type TargetOption = {
-  target: Target;
-  type?: FlipType; // default to "scale"
-};
+  target: Target
+  type?: FlipType // default to "scale"
+}
 
 export type Options = {
-  duration?: number; // ms
-  easing?: string;
-  reduceMotion?: boolean;
-  root?: RefObject<HTMLElement | null>; // where to append ghosts/wrappers
-};
+  duration?: number // ms
+  easing?: string
+  reduceMotion?: boolean
+  root?: RefObject<HTMLElement | null> // where to append ghosts/wrappers
+}
 
-const DEFAULT_DURATION = 240; // ms
-const DEFAULT_EASING = "ease";
+const DEFAULT_DURATION = 240 // ms
+const DEFAULT_EASING = 'ease'
 
 type Snapshot = {
-  top: number; // viewport top
-  left: number; // viewport left
-  width: number;
-  height: number;
-};
+  top: number // viewport top
+  left: number // viewport left
+  width: number
+  height: number
+}
 
 type Entry = {
-  key: number;
-  el: HTMLElement;
-  type: FlipType;
-};
+  key: number
+  el: HTMLElement
+  type: FlipType
+}
 type EntryRecord = {
-  key: number;
-  el: HTMLElement;
-  type: FlipType;
-  first: Snapshot | null;
-  last: Snapshot;
-  firstStyle: Partial<CSSStyleDeclaration> | null;
-  lastStyle: Partial<CSSStyleDeclaration> | null;
-  computedZ: string | null;
-  scrollParent: HTMLElement | null;
-  scrollLeft: number;
-  scrollTop: number;
-};
+  key: number
+  el: HTMLElement
+  type: FlipType
+  first: Snapshot | null
+  last: Snapshot
+  firstStyle: Partial<CSSStyleDeclaration> | null
+  lastStyle: Partial<CSSStyleDeclaration> | null
+  computedZ: string | null
+  scrollParent: HTMLElement | null
+  scrollLeft: number
+  scrollTop: number
+}
 
 type SnapshotRecord = {
-  el: HTMLElement;
-  snapshot: Snapshot;
-  scrollParent: HTMLElement | null;
-  scrollLeft: number;
-  scrollTop: number;
-};
+  el: HTMLElement
+  snapshot: Snapshot
+  scrollParent: HTMLElement | null
+  scrollLeft: number
+  scrollTop: number
+}
 
 type StyleRecord = {
-  el: HTMLElement;
-  style: Partial<CSSStyleDeclaration> | null;
-};
+  el: HTMLElement
+  style: Partial<CSSStyleDeclaration> | null
+}
 
 function resolveEl(t: Target): HTMLElement | null {
-  if (typeof t === "string")
-    return document.querySelector(t) as HTMLElement | null;
-  if (t && typeof t === "object" && "current" in t)
-    return (t.current as HTMLElement | null) ?? null;
-  return (t as HTMLElement) ?? null;
+  if (typeof t === 'string')
+    return document.querySelector(t) as HTMLElement | null
+  if (t && typeof t === 'object' && 'current' in t)
+    return (t.current as HTMLElement | null) ?? null
+  return (t as HTMLElement) ?? null
 }
 
 function buildEntryFromTarget(targets: (Target | TargetOption)[]): Entry[] {
@@ -82,34 +82,34 @@ function buildEntryFromTarget(targets: (Target | TargetOption)[]): Entry[] {
     .map(
       (
         t,
-        idx
+        idx,
       ): {
-        key: number;
-        el: HTMLElement | null;
-        type: FlipType;
+        key: number
+        el: HTMLElement | null
+        type: FlipType
       } => {
-        const opt: TargetOption =
-          typeof t === "string" ||
-          (typeof t === "object" && t && !("target" in t))
-            ? { target: t as Target, type: "scale" }
-            : (t as TargetOption);
+        const opt: TargetOption
+          = typeof t === 'string'
+            || (typeof t === 'object' && t && !('target' in t))
+            ? { target: t as Target, type: 'scale' }
+            : (t as TargetOption)
         return {
           key: idx,
           el: resolveEl(opt.target),
-          type: opt.type ?? "scale",
-        };
-      }
+          type: opt.type ?? 'scale',
+        }
+      },
     )
-    .filter((entry): entry is Entry => Boolean(entry.el));
-  return entries;
+    .filter((entry): entry is Entry => Boolean(entry.el))
+  return entries
 }
 
 // We include more text-related props to better match final wrapping
 function pickTextStyles(
-  el: HTMLElement | null
+  el: HTMLElement | null,
 ): Partial<CSSStyleDeclaration> | null {
-  if (!el) return null;
-  const c = getComputedStyle(el);
+  if (!el) return null
+  const c = getComputedStyle(el)
   return {
     fontSize: c.fontSize,
     fontWeight: c.fontWeight,
@@ -118,57 +118,57 @@ function pickTextStyles(
     whiteSpace: c.whiteSpace,
     wordBreak: c.wordBreak,
     color: c.color,
-  } as Partial<CSSStyleDeclaration>;
+  } as Partial<CSSStyleDeclaration>
 }
 
 function measure(el: HTMLElement, rootEl: HTMLElement | null): Snapshot {
-  const rect = el.getBoundingClientRect();
-  const baseEl = rootEl?.querySelector("[data-flip-base-layer]");
-  let top = rect.top;
-  let left = rect.left;
+  const rect = el.getBoundingClientRect()
+  const baseEl = rootEl?.querySelector('[data-flip-base-layer]')
+  let top = rect.top
+  let left = rect.left
   if (baseEl && el !== rootEl) {
-    const baseRect = baseEl.getBoundingClientRect();
-    top = top - baseRect.top;
-    left = left - baseRect.left;
+    const baseRect = baseEl.getBoundingClientRect()
+    top = top - baseRect.top
+    left = left - baseRect.left
   }
   return {
     top: top,
     left: left,
     width: rect.width,
     height: rect.height,
-  };
+  }
 }
 
 function resolveOverlay(rootEl: HTMLElement | null) {
-  if (!rootEl) return document.body;
-  const layer = rootEl.querySelector<HTMLElement>("[data-flip-layer]");
-  return layer ?? rootEl;
+  if (!rootEl) return document.body
+  const layer = rootEl.querySelector<HTMLElement>('[data-flip-layer]')
+  return layer ?? rootEl
 }
 
 function getScrollParent(el: HTMLElement | null): HTMLElement | null {
-  let current: HTMLElement | null = el?.parentElement ?? null;
+  let current: HTMLElement | null = el?.parentElement ?? null
   while (current) {
     if (current === document.body || current === document.documentElement) {
-      current = current.parentElement;
-      continue;
+      current = current.parentElement
+      continue
     }
-    const style = getComputedStyle(current);
-    const overflowY = style.overflowY;
-    const overflowX = style.overflowX;
-    const isScrollableY =
-      overflowY === "auto" || overflowY === "scroll" || overflowY === "overlay";
-    const isScrollableX =
-      overflowX === "auto" || overflowX === "scroll" || overflowX === "overlay";
-    if (isScrollableX || isScrollableY) return current;
-    current = current.parentElement;
+    const style = getComputedStyle(current)
+    const overflowY = style.overflowY
+    const overflowX = style.overflowX
+    const isScrollableY
+      = overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'overlay'
+    const isScrollableX
+      = overflowX === 'auto' || overflowX === 'scroll' || overflowX === 'overlay'
+    if (isScrollableX || isScrollableY) return current
+    current = current.parentElement
   }
-  return null;
+  return null
 }
 
 function updateBaseline(
   record: EntryRecord,
   rectMap: Map<number, SnapshotRecord>,
-  styleMap: Map<number, StyleRecord>
+  styleMap: Map<number, StyleRecord>,
 ) {
   rectMap.set(record.key, {
     el: record.el,
@@ -176,86 +176,86 @@ function updateBaseline(
     scrollParent: record.scrollParent,
     scrollLeft: record.scrollLeft,
     scrollTop: record.scrollTop,
-  });
-  if (record.type === "text" || record.type === "reflow") {
+  })
+  if (record.type === 'text' || record.type === 'reflow') {
     styleMap.set(record.key, {
       el: record.el,
       style: record.lastStyle,
-    });
+    })
   } else {
-    styleMap.delete(record.key);
+    styleMap.delete(record.key)
   }
 }
 
 export function useFlip(
   targets: (Target | TargetOption)[],
   deps: ReadonlyArray<unknown>,
-  opts: Options = {}
+  opts: Options = {},
 ) {
   const {
     duration = DEFAULT_DURATION,
     easing = DEFAULT_EASING,
     reduceMotion,
     root,
-  } = opts;
+  } = opts
 
-  const firstRectsRef = useRef<Map<number, SnapshotRecord>>(new Map());
-  const firstStylesRef = useRef<Map<number, StyleRecord>>(new Map());
-  const readyOnceRef = useRef(false);
-  const skipCleanRef = useRef(false);
+  const firstRectsRef = useRef<Map<number, SnapshotRecord>>(new Map())
+  const firstStylesRef = useRef<Map<number, StyleRecord>>(new Map())
+  const readyOnceRef = useRef(false)
+  const skipCleanRef = useRef(false)
 
   useLayoutEffect(() => {
-    const firstRectsMap = firstRectsRef.current;
-    const firstStylesMap = firstStylesRef.current;
-    const rootEl = root?.current ?? null;
-    const entries = buildEntryFromTarget(targets);
+    const firstRectsMap = firstRectsRef.current
+    const firstStylesMap = firstStylesRef.current
+    const rootEl = root?.current ?? null
+    const entries = buildEntryFromTarget(targets)
 
     if (!entries.length) {
-      return;
+      return
     }
 
     if (!readyOnceRef.current) {
       entries.forEach((entry) => {
-        const snapshot = measure(entry.el, rootEl);
-        const scrollParent = getScrollParent(entry.el);
+        const snapshot = measure(entry.el, rootEl)
+        const scrollParent = getScrollParent(entry.el)
         firstRectsMap.set(entry.key, {
           el: entry.el,
           snapshot,
           scrollParent,
           scrollLeft: scrollParent?.scrollLeft ?? 0,
           scrollTop: scrollParent?.scrollTop ?? 0,
-        });
-        if (entry.type === "text" || entry.type === "reflow") {
+        })
+        if (entry.type === 'text' || entry.type === 'reflow') {
           firstStylesMap.set(entry.key, {
             el: entry.el,
             style: pickTextStyles(entry.el),
-          });
+          })
         } else {
-          firstStylesMap.delete(entry.key);
+          firstStylesMap.delete(entry.key)
         }
-      });
-      readyOnceRef.current = true;
-      return;
+      })
+      readyOnceRef.current = true
+      return
     }
 
     const records: EntryRecord[] = entries.map((entry) => {
-      const last = measure(entry.el, rootEl);
-      const lastStyle =
-        entry.type === "text" || entry.type === "reflow"
+      const last = measure(entry.el, rootEl)
+      const lastStyle
+        = entry.type === 'text' || entry.type === 'reflow'
           ? pickTextStyles(entry.el)
-          : null;
-      const scrollParent = getScrollParent(entry.el);
-      const scrollLeft = scrollParent?.scrollLeft ?? 0;
-      const scrollTop = scrollParent?.scrollTop ?? 0;
-      const baseline = firstRectsMap.get(entry.key);
-      const styleBaseline = firstStylesMap.get(entry.key);
-      const sameElement = baseline?.el === entry.el;
-      const first = baseline?.snapshot ?? null;
-      const firstStyle =
-        sameElement && styleBaseline?.el === entry.el
+          : null
+      const scrollParent = getScrollParent(entry.el)
+      const scrollLeft = scrollParent?.scrollLeft ?? 0
+      const scrollTop = scrollParent?.scrollTop ?? 0
+      const baseline = firstRectsMap.get(entry.key)
+      const styleBaseline = firstStylesMap.get(entry.key)
+      const sameElement = baseline?.el === entry.el
+      const first = baseline?.snapshot ?? null
+      const firstStyle
+        = sameElement && styleBaseline?.el === entry.el
           ? styleBaseline.style ?? null
-          : null;
-      const computed = getComputedStyle(entry.el);
+          : null
+      const computed = getComputedStyle(entry.el)
       return {
         key: entry.key,
         el: entry.el,
@@ -264,269 +264,269 @@ export function useFlip(
         last,
         firstStyle,
         lastStyle,
-        computedZ: computed.zIndex === "auto" ? null : computed.zIndex,
+        computedZ: computed.zIndex === 'auto' ? null : computed.zIndex,
         scrollParent,
         scrollLeft,
         scrollTop,
-      };
-    });
+      }
+    })
 
-    const isReduced =
-      reduceMotion ??
-      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    const isReduced
+      = reduceMotion
+        ?? window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
 
-    const overlayRoot = resolveOverlay(rootEl);
+    const overlayRoot = resolveOverlay(rootEl)
 
     type NodeRec = {
-      type: FlipType;
-      ghost: HTMLElement;
-      wrapper?: HTMLElement;
-      record: EntryRecord;
-    };
-    const nodes: NodeRec[] = [];
-    const prevVis = new Map<number, string>();
+      type: FlipType
+      ghost: HTMLElement
+      wrapper?: HTMLElement
+      record: EntryRecord
+    }
+    const nodes: NodeRec[] = []
+    const prevVis = new Map<number, string>()
 
-    let usableCount = 0;
+    let usableCount = 0
 
     records.forEach((record) => {
-      const { first, last, type } = record;
+      const { first, last, type } = record
 
       if (!first) {
-        updateBaseline(record, firstRectsMap, firstStylesMap);
-        return;
+        updateBaseline(record, firstRectsMap, firstStylesMap)
+        return
       }
 
-      const dx = first.left - last.left;
-      const dy = first.top - last.top;
-      const sx = last.width ? first.width / Math.max(1, last.width) : 1;
-      const sy = last.height ? first.height / Math.max(1, last.height) : 1;
+      const dx = first.left - last.left
+      const dy = first.top - last.top
+      const sx = last.width ? first.width / Math.max(1, last.width) : 1
+      const sy = last.height ? first.height / Math.max(1, last.height) : 1
 
-      const moved = Math.abs(dx) > 0.5 || Math.abs(dy) > 0.5;
-      const sizeChanged = Math.abs(sx - 1) > 0.001 || Math.abs(sy - 1) > 0.001;
-      const changed = moved || sizeChanged;
+      const moved = Math.abs(dx) > 0.5 || Math.abs(dy) > 0.5
+      const sizeChanged = Math.abs(sx - 1) > 0.001 || Math.abs(sy - 1) > 0.001
+      const changed = moved || sizeChanged
 
       if (!changed || isReduced) {
-        updateBaseline(record, firstRectsMap, firstStylesMap);
-        return;
+        updateBaseline(record, firstRectsMap, firstStylesMap)
+        return
       }
 
-      usableCount++;
+      usableCount++
 
-      const clone = record.el.cloneNode(true) as HTMLElement;
-      clone.style.margin = "0";
-      clone.style.transformOrigin = "top left";
-      clone.style.pointerEvents = "none";
-      clone.style.willChange = "transform, opacity";
+      const clone = record.el.cloneNode(true) as HTMLElement
+      clone.style.margin = '0'
+      clone.style.transformOrigin = 'top left'
+      clone.style.pointerEvents = 'none'
+      clone.style.willChange = 'transform, opacity'
 
-      if (record.computedZ) clone.style.zIndex = record.computedZ;
+      if (record.computedZ) clone.style.zIndex = record.computedZ
 
-      if (type === "reflow") {
+      if (type === 'reflow') {
         // --- DEST-SIZED WRAPPER + COUNTER-SCALE ---
-        const wrapper = document.createElement("div");
-        wrapper.style.position = "fixed";
-        wrapper.style.left = `${last.left}px`;
-        wrapper.style.top = `${last.top}px`;
-        wrapper.style.width = `${last.width}px`;
-        wrapper.style.height = `${last.height}px`;
-        wrapper.style.transformOrigin = "top left";
-        wrapper.style.willChange = "transform";
-        wrapper.style.pointerEvents = "none";
+        const wrapper = document.createElement('div')
+        wrapper.style.position = 'fixed'
+        wrapper.style.left = `${last.left}px`
+        wrapper.style.top = `${last.top}px`
+        wrapper.style.width = `${last.width}px`
+        wrapper.style.height = `${last.height}px`
+        wrapper.style.transformOrigin = 'top left'
+        wrapper.style.willChange = 'transform'
+        wrapper.style.pointerEvents = 'none'
         // wrapper.style.overflow = "hidden"; // clip to target box
-        if (record.computedZ) wrapper.style.zIndex = record.computedZ;
+        if (record.computedZ) wrapper.style.zIndex = record.computedZ
 
         // Apply LAST text styles to keep wrapping identical throughout
-        const s = record.lastStyle;
-        if (s?.fontSize) clone.style.fontSize = s.fontSize as string;
-        if (s?.fontWeight) clone.style.fontWeight = s.fontWeight as string;
-        if (s?.lineHeight) clone.style.lineHeight = s.lineHeight as string;
+        const s = record.lastStyle
+        if (s?.fontSize) clone.style.fontSize = s.fontSize as string
+        if (s?.fontWeight) clone.style.fontWeight = s.fontWeight as string
+        if (s?.lineHeight) clone.style.lineHeight = s.lineHeight as string
         if (s?.letterSpacing)
-          clone.style.letterSpacing = s.letterSpacing as string;
-        if (s?.whiteSpace) clone.style.whiteSpace = s.whiteSpace;
-        if (s?.wordBreak) clone.style.wordBreak = s.wordBreak;
-        if (s?.color) clone.style.color = s.color as string;
+          clone.style.letterSpacing = s.letterSpacing as string
+        if (s?.whiteSpace) clone.style.whiteSpace = s.whiteSpace
+        if (s?.wordBreak) clone.style.wordBreak = s.wordBreak
+        if (s?.color) clone.style.color = s.color as string
 
         // Make clone fill the target box; scale it so it *looks* like first box
-        clone.style.width = "100%";
-        clone.style.height = "100%";
-        clone.style.transform = `scale(${sx}, ${sy})`;
+        clone.style.width = '100%'
+        clone.style.height = '100%'
+        clone.style.transform = `scale(${sx}, ${sy})`
 
         // Initial wrapper transform makes it appear at FIRST position
-        wrapper.style.transform = `translate3d(${dx}px, ${dy}px, 0)`;
+        wrapper.style.transform = `translate3d(${dx}px, ${dy}px, 0)`
 
-        wrapper.appendChild(clone);
-        overlayRoot.appendChild(wrapper);
+        wrapper.appendChild(clone)
+        overlayRoot.appendChild(wrapper)
 
-        prevVis.set(record.key, record.el.style.visibility);
-        record.el.style.visibility = "hidden";
-        nodes.push({ type, ghost: clone, wrapper, record });
+        prevVis.set(record.key, record.el.style.visibility)
+        record.el.style.visibility = 'hidden'
+        nodes.push({ type, ghost: clone, wrapper, record })
 
         // Play
         requestAnimationFrame(() => {
-          wrapper.style.transition = `transform ${duration}ms ${easing}`;
-          clone.style.transition = `transform ${duration}ms ${easing}`;
-          wrapper.style.transform = `translate3d(0px, 0px, 0)`;
-          clone.style.transform = `scale(1, 1)`;
-        });
+          wrapper.style.transition = `transform ${duration}ms ${easing}`
+          clone.style.transition = `transform ${duration}ms ${easing}`
+          wrapper.style.transform = `translate3d(0px, 0px, 0)`
+          clone.style.transform = `scale(1, 1)`
+        })
       } else {
         // --- ORIGINAL CLONE FLOW ---
-        clone.style.position = "fixed";
-        clone.style.top = `${first.top}px`;
-        clone.style.left = `${first.left}px`;
-        if (type !== "text") {
-          clone.style.width = `${first.width}px`;
-          clone.style.height = `${first.height}px`;
+        clone.style.position = 'fixed'
+        clone.style.top = `${first.top}px`
+        clone.style.left = `${first.left}px`
+        if (type !== 'text') {
+          clone.style.width = `${first.width}px`
+          clone.style.height = `${first.height}px`
         }
-        if (type === "text") {
-          const s0 = record.firstStyle;
-          if (s0?.fontSize) clone.style.fontSize = s0.fontSize as string;
-          if (s0?.fontWeight) clone.style.fontWeight = s0.fontWeight as string;
-          if (s0?.color) clone.style.color = s0.color as string;
+        if (type === 'text') {
+          const s0 = record.firstStyle
+          if (s0?.fontSize) clone.style.fontSize = s0.fontSize as string
+          if (s0?.fontWeight) clone.style.fontWeight = s0.fontWeight as string
+          if (s0?.color) clone.style.color = s0.color as string
         }
-        overlayRoot.appendChild(clone);
-        prevVis.set(record.key, record.el.style.visibility);
-        record.el.style.visibility = "hidden";
-        nodes.push({ type, ghost: clone, record });
+        overlayRoot.appendChild(clone)
+        prevVis.set(record.key, record.el.style.visibility)
+        record.el.style.visibility = 'hidden'
+        nodes.push({ type, ghost: clone, record })
 
         requestAnimationFrame(() => {
-          const parts: string[] = [];
-          parts.push(`transform ${duration}ms ${easing}`);
-          if (type === "text") {
-            parts.push(`font-size ${duration}ms ${easing}`);
-            parts.push(`font-weight ${duration}ms ${easing}`);
-            parts.push(`color ${duration}ms ${easing}`);
+          const parts: string[] = []
+          parts.push(`transform ${duration}ms ${easing}`)
+          if (type === 'text') {
+            parts.push(`font-size ${duration}ms ${easing}`)
+            parts.push(`font-weight ${duration}ms ${easing}`)
+            parts.push(`color ${duration}ms ${easing}`)
           }
-          clone.style.transition = parts.join(",");
+          clone.style.transition = parts.join(',')
 
-          const transform: string[] = [];
-          const translateX = record.last.left - record.first!.left;
-          const translateY = record.last.top - record.first!.top;
-          transform.push(`translate3d(${translateX}px, ${translateY}px, 0)`);
-          if (type === "scale") {
+          const transform: string[] = []
+          const translateX = record.last.left - record.first!.left
+          const translateY = record.last.top - record.first!.top
+          transform.push(`translate3d(${translateX}px, ${translateY}px, 0)`)
+          if (type === 'scale') {
             const sxx = record.last.width
               ? record.last.width / Math.max(1, record.first!.width)
-              : 1;
+              : 1
             const syy = record.last.height
               ? record.last.height / Math.max(1, record.first!.height)
-              : 1;
-            transform.push(`scale(${sxx}, ${syy})`);
-          } else if (type === "text") {
-            const s1 = record.lastStyle;
-            if (s1?.fontSize) clone.style.fontSize = s1.fontSize as string;
+              : 1
+            transform.push(`scale(${sxx}, ${syy})`)
+          } else if (type === 'text') {
+            const s1 = record.lastStyle
+            if (s1?.fontSize) clone.style.fontSize = s1.fontSize as string
             if (s1?.fontWeight)
-              clone.style.fontWeight = s1.fontWeight as string;
-            if (s1?.color) clone.style.color = s1.color as string;
+              clone.style.fontWeight = s1.fontWeight as string
+            if (s1?.color) clone.style.color = s1.color as string
           }
-          clone.style.transform = transform.join(" ");
-        });
+          clone.style.transform = transform.join(' ')
+        })
       }
-    });
+    })
 
-    if (!usableCount) return;
+    if (!usableCount) return
 
     // Finish & cleanup
-    let done = 0;
-    const allNodes = nodes.map((n) => n.wrapper ?? n.ghost);
+    let done = 0
+    const allNodes = nodes.map(n => n.wrapper ?? n.ghost)
 
     const finish = () => {
-      done++;
-      if (done < allNodes.length) return;
+      done++
+      if (done < allNodes.length) return
       // Remove visuals
       nodes.forEach((rec) => {
-        if (rec.wrapper) rec.wrapper.remove();
-        else rec.ghost.remove();
-      });
+        if (rec.wrapper) rec.wrapper.remove()
+        else rec.ghost.remove()
+      })
       // Restore
       nodes.forEach(({ record }) => {
-        record.el.style.visibility = prevVis.get(record.key) ?? "";
-      });
+        record.el.style.visibility = prevVis.get(record.key) ?? ''
+      })
       // Baseline update
       records.forEach((record) => {
-        updateBaseline(record, firstRectsMap, firstStylesMap);
-      });
-    };
+        updateBaseline(record, firstRectsMap, firstStylesMap)
+      })
+    }
 
     const onEnd = (e: Event) => {
-      const t = e.currentTarget as HTMLElement;
-      t.removeEventListener("transitionend", onEnd);
-      t.removeEventListener("transitioncancel", onEnd);
-      finish();
-    };
+      const t = e.currentTarget as HTMLElement
+      t.removeEventListener('transitionend', onEnd)
+      t.removeEventListener('transitioncancel', onEnd)
+      finish()
+    }
 
     if (!nodes.length) {
-      records.forEach((record) =>
-        updateBaseline(record, firstRectsMap, firstStylesMap)
-      );
-      return;
+      records.forEach(record =>
+        updateBaseline(record, firstRectsMap, firstStylesMap),
+      )
+      return
     }
 
     allNodes.forEach((el) => {
-      el.addEventListener("transitionend", onEnd);
-      el.addEventListener("transitioncancel", onEnd);
-    });
+      el.addEventListener('transitionend', onEnd)
+      el.addEventListener('transitioncancel', onEnd)
+    })
 
     const timeout = window.setTimeout(() => {
       allNodes.forEach((el) => {
-        el.removeEventListener("transitionend", onEnd);
-        el.removeEventListener("transitioncancel", onEnd);
-      });
-      finish();
+        el.removeEventListener('transitionend', onEnd)
+        el.removeEventListener('transitioncancel', onEnd)
+      })
+      finish()
       document
-        .querySelectorAll("div[data-flip-layer] > *")
-        .forEach((e) => e.remove());
-    }, duration + 160);
+        .querySelectorAll('div[data-flip-layer] > *')
+        .forEach(e => e.remove())
+    }, duration + 160)
 
     return () => {
-      window.clearTimeout(timeout);
+      window.clearTimeout(timeout)
       // Cleanup any leftovers
-      nodes.forEach((rec) =>
-        rec.wrapper ? rec.wrapper.remove() : rec.ghost.remove()
-      );
+      nodes.forEach(rec =>
+        rec.wrapper ? rec.wrapper.remove() : rec.ghost.remove(),
+      )
       nodes.forEach(({ record }) => {
-        record.el.style.visibility = prevVis.get(record.key) ?? "";
-      });
+        record.el.style.visibility = prevVis.get(record.key) ?? ''
+      })
       if (!skipCleanRef.current) {
-        records.forEach((record) =>
-          updateBaseline(record, firstRectsMap, firstStylesMap)
-        );
+        records.forEach(record =>
+          updateBaseline(record, firstRectsMap, firstStylesMap),
+        )
       } else {
-        skipCleanRef.current = false;
+        skipCleanRef.current = false
       }
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, deps);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, deps)
 
   const refreshBaseline = useCallback(() => {
-    const rootEl = root?.current ?? null;
-    const firstRectsMap = firstRectsRef.current;
-    const firstStylesMap = firstStylesRef.current;
+    const rootEl = root?.current ?? null
+    const firstRectsMap = firstRectsRef.current
+    const firstStylesMap = firstStylesRef.current
 
-    const entries = buildEntryFromTarget(targets);
+    const entries = buildEntryFromTarget(targets)
 
     entries.forEach((entry) => {
-      const snapshot = measure(entry.el, rootEl);
-      const scrollParent = getScrollParent(entry.el);
+      const snapshot = measure(entry.el, rootEl)
+      const scrollParent = getScrollParent(entry.el)
       firstRectsMap.set(entry.key, {
         el: entry.el,
         snapshot,
         scrollParent,
         scrollLeft: scrollParent?.scrollLeft ?? 0,
         scrollTop: scrollParent?.scrollTop ?? 0,
-      });
+      })
 
-      if (entry.type === "text" || entry.type === "reflow") {
+      if (entry.type === 'text' || entry.type === 'reflow') {
         firstStylesMap.set(entry.key, {
           el: entry.el,
           style: pickTextStyles(entry.el),
-        });
+        })
       } else {
-        firstStylesMap.delete(entry.key);
+        firstStylesMap.delete(entry.key)
       }
-    });
+    })
 
-    skipCleanRef.current = true;
-    readyOnceRef.current = true;
-  }, [targets, root]);
+    skipCleanRef.current = true
+    readyOnceRef.current = true
+  }, [targets, root])
   return {
     refreshBaseline,
-  };
+  }
 }

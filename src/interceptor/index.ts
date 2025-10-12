@@ -1,77 +1,78 @@
-import { postToContent } from "./messaging";
-import { performTweetActionRequest } from "./tweetActions";
-import { performPollVoteRequest } from "./poll";
-import { performTweetDetailRequest } from "./tweetDetailTemplate";
-import { performMediaUploadRequest } from "./mediaUpload";
-import { installXhrInterceptor } from "./xhrInterceptor";
-import { performFriendshipRequest } from "./friendships";
-import { performFollowingListRequest } from "./followingList";
 import {
   CONTENT_EVENT_TYPE_ACTION_REQUEST,
   CONTENT_EVENT_TYPE_DETAIL_REQUEST,
-  CONTENT_EVENT_TYPE_FRIENDSHIP_REQUEST,
   CONTENT_EVENT_TYPE_FOLLOWING_LIST_REQUEST,
-  CONTENT_EVENT_TYPE_UPLOAD_REQUEST,
+  CONTENT_EVENT_TYPE_FRIENDSHIP_REQUEST,
   CONTENT_EVENT_TYPE_POLL_VOTE_REQUEST,
+  CONTENT_EVENT_TYPE_UPLOAD_REQUEST,
   EXT_BRIDGE_SOURCE,
   INTERCEPTOR_EVENT_TYPE_ACTION_ERROR,
   INTERCEPTOR_EVENT_TYPE_ACTION_RESPONSE,
   INTERCEPTOR_EVENT_TYPE_DETAIL_ERROR,
   INTERCEPTOR_EVENT_TYPE_DETAIL_RESPONSE,
-  INTERCEPTOR_EVENT_TYPE_POLL_VOTE_ERROR,
-  INTERCEPTOR_EVENT_TYPE_POLL_VOTE_RESPONSE,
-  INTERCEPTOR_EVENT_TYPE_FRIENDSHIP_ERROR,
-  INTERCEPTOR_EVENT_TYPE_FRIENDSHIP_RESPONSE,
   INTERCEPTOR_EVENT_TYPE_FOLLOWING_LIST_ERROR,
   INTERCEPTOR_EVENT_TYPE_FOLLOWING_LIST_RESPONSE,
+  INTERCEPTOR_EVENT_TYPE_FRIENDSHIP_ERROR,
+  INTERCEPTOR_EVENT_TYPE_FRIENDSHIP_RESPONSE,
+  INTERCEPTOR_EVENT_TYPE_POLL_VOTE_ERROR,
+  INTERCEPTOR_EVENT_TYPE_POLL_VOTE_RESPONSE,
   MESSAGE_DIRECTION_TO_INTERCEPTOR,
-} from "@common/bridge";
+} from '@/common/bridge'
 
-installXhrInterceptor();
+import { performFollowingListRequest } from './followingList'
+import { performFriendshipRequest } from './friendships'
+import { performMediaUploadRequest } from './mediaUpload'
+import { postToContent } from './messaging'
+import { performPollVoteRequest } from './poll'
+import { performTweetActionRequest } from './tweetActions'
+import { performTweetDetailRequest } from './tweetDetailTemplate'
+import { installXhrInterceptor } from './xhrInterceptor'
 
-window.addEventListener("message", async (event: MessageEvent) => {
-  if (event.source !== window) return;
-  const data = event.data;
-  if (!data || data.source !== EXT_BRIDGE_SOURCE) return;
-  if (data.direction !== MESSAGE_DIRECTION_TO_INTERCEPTOR) return;
+installXhrInterceptor()
+
+window.addEventListener('message', async (event: MessageEvent) => {
+  if (event.source !== window) return
+  const data = event.data
+  if (!data || data.source !== EXT_BRIDGE_SOURCE) return
+  if (data.direction !== MESSAGE_DIRECTION_TO_INTERCEPTOR) return
 
   if (data.type === CONTENT_EVENT_TYPE_DETAIL_REQUEST) {
     const payload = data.payload as {
-      tweetId?: string;
-      controllerData?: string | null;
-      requestId?: string;
-    };
-    if (!payload?.tweetId || !payload.requestId) return;
+      tweetId?: string
+      controllerData?: string | null
+      requestId?: string
+    }
+    if (!payload?.tweetId || !payload.requestId) return
     try {
       const detail = await performTweetDetailRequest(
         payload.tweetId,
-        payload.controllerData
-      );
+        payload.controllerData,
+      )
       postToContent(INTERCEPTOR_EVENT_TYPE_DETAIL_RESPONSE, {
         requestId: payload.requestId,
         data: detail,
-      });
+      })
     } catch (error) {
       postToContent(INTERCEPTOR_EVENT_TYPE_DETAIL_ERROR, {
         requestId: payload.requestId,
         error:
-          error instanceof Error ? error.message : String(error ?? "未知错误"),
-      });
+          error instanceof Error ? error.message : String(error ?? '未知错误'),
+      })
     }
-    return;
+    return
   }
 
   if (data.type === CONTENT_EVENT_TYPE_ACTION_REQUEST) {
     const payload = data.payload as {
-      requestId?: string;
-      docId?: string;
-      operationName?: string;
-      variables?: Record<string, unknown>;
-      features?: Record<string, unknown>;
-      method?: "GET" | "POST";
-      fieldToggles?: Record<string, unknown>;
-    };
-    if (!payload?.requestId || !payload.docId || !payload.operationName) return;
+      requestId?: string
+      docId?: string
+      operationName?: string
+      variables?: Record<string, unknown>
+      features?: Record<string, unknown>
+      method?: 'GET' | 'POST'
+      fieldToggles?: Record<string, unknown>
+    }
+    if (!payload?.requestId || !payload.docId || !payload.operationName) return
 
     try {
       const result = await performTweetActionRequest({
@@ -81,40 +82,40 @@ window.addEventListener("message", async (event: MessageEvent) => {
         features: payload.features ?? undefined,
         method: payload.method ?? undefined,
         fieldToggles: payload.fieldToggles ?? undefined,
-      });
+      })
       postToContent(INTERCEPTOR_EVENT_TYPE_ACTION_RESPONSE, {
         requestId: payload.requestId,
         data: result,
-      });
+      })
     } catch (error) {
       postToContent(INTERCEPTOR_EVENT_TYPE_ACTION_ERROR, {
         requestId: payload.requestId,
         error:
-          error instanceof Error ? error.message : String(error ?? "未知错误"),
-      });
+          error instanceof Error ? error.message : String(error ?? '未知错误'),
+      })
     }
   }
 
   if (data.type === CONTENT_EVENT_TYPE_POLL_VOTE_REQUEST) {
     const payload = data.payload as {
-      requestId?: string;
-      endpoint?: string;
-      cardUri?: string;
-      cardName?: string;
-      tweetId?: string;
-      choiceId?: number;
-      cardsPlatform?: string;
-    };
+      requestId?: string
+      endpoint?: string
+      cardUri?: string
+      cardName?: string
+      tweetId?: string
+      choiceId?: number
+      cardsPlatform?: string
+    }
 
     if (
-      !payload?.requestId ||
-      !payload.endpoint ||
-      !payload.cardUri ||
-      !payload.cardName ||
-      !payload.tweetId ||
-      typeof payload.choiceId !== "number"
+      !payload?.requestId
+      || !payload.endpoint
+      || !payload.cardUri
+      || !payload.cardName
+      || !payload.tweetId
+      || typeof payload.choiceId !== 'number'
     ) {
-      return;
+      return
     }
 
     try {
@@ -125,40 +126,40 @@ window.addEventListener("message", async (event: MessageEvent) => {
         tweetId: payload.tweetId,
         choiceId: payload.choiceId,
         cardsPlatform: payload.cardsPlatform,
-      });
+      })
       postToContent(INTERCEPTOR_EVENT_TYPE_POLL_VOTE_RESPONSE, {
         requestId: payload.requestId,
         data: result,
-      });
+      })
     } catch (error) {
       postToContent(INTERCEPTOR_EVENT_TYPE_POLL_VOTE_ERROR, {
         requestId: payload.requestId,
         error:
-          error instanceof Error ? error.message : String(error ?? "未知错误"),
-      });
+          error instanceof Error ? error.message : String(error ?? '未知错误'),
+      })
     }
-    return;
+    return
   }
 
   if (data.type === CONTENT_EVENT_TYPE_UPLOAD_REQUEST) {
     const payload = data.payload as {
-      requestId?: string;
-      file?: Blob;
-      mediaType?: string;
-      mediaCategory?: string;
-      fileName?: string;
-      chunkSizeBytes?: number;
-      additionalOwners?: string[];
-    };
+      requestId?: string
+      file?: Blob
+      mediaType?: string
+      mediaCategory?: string
+      fileName?: string
+      chunkSizeBytes?: number
+      additionalOwners?: string[]
+    }
 
     if (
-      !payload?.requestId ||
-      !payload.file ||
-      !payload.mediaType ||
-      !payload.mediaCategory ||
-      !payload.fileName
+      !payload?.requestId
+      || !payload.file
+      || !payload.mediaType
+      || !payload.mediaCategory
+      || !payload.fileName
     ) {
-      return;
+      return
     }
 
     await performMediaUploadRequest({
@@ -168,79 +169,79 @@ window.addEventListener("message", async (event: MessageEvent) => {
       mediaCategory: payload.mediaCategory,
       fileName: payload.fileName,
       chunkSizeBytes:
-        typeof payload.chunkSizeBytes === "number"
+        typeof payload.chunkSizeBytes === 'number'
           ? payload.chunkSizeBytes
           : undefined,
       additionalOwners: Array.isArray(payload.additionalOwners)
         ? [...payload.additionalOwners]
         : undefined,
-    });
+    })
   }
 
   if (data.type === CONTENT_EVENT_TYPE_FRIENDSHIP_REQUEST) {
     const payload = data.payload as {
-      requestId?: string;
-      action?: "follow" | "unfollow";
-      userId?: string;
-      body?: string;
-    };
+      requestId?: string
+      action?: 'follow' | 'unfollow'
+      userId?: string
+      body?: string
+    }
     if (
-      !payload?.requestId ||
-      !payload.action ||
-      !payload.userId ||
-      !payload.body
+      !payload?.requestId
+      || !payload.action
+      || !payload.userId
+      || !payload.body
     )
-      return;
+      return
 
     try {
       const result = await performFriendshipRequest({
         action: payload.action,
         userId: payload.userId,
         body: payload.body,
-      });
+      })
       postToContent(INTERCEPTOR_EVENT_TYPE_FRIENDSHIP_RESPONSE, {
         requestId: payload.requestId,
         data: result,
         action: payload.action,
         userId: payload.userId,
-      });
+      })
     } catch (error) {
       postToContent(INTERCEPTOR_EVENT_TYPE_FRIENDSHIP_ERROR, {
         requestId: payload.requestId,
         error:
-          error instanceof Error ? error.message : String(error ?? "未知错误"),
-      });
+          error instanceof Error ? error.message : String(error ?? '未知错误'),
+      })
     }
   }
 
   if (data.type === CONTENT_EVENT_TYPE_FOLLOWING_LIST_REQUEST) {
     const payload = data.payload as {
-      requestId?: string;
-      userId?: string;
-      count?: number;
-      cursor?: string;
-    };
-    if (!payload?.requestId || !payload.userId) return;
+      requestId?: string
+      userId?: string
+      count?: number
+      cursor?: string
+    }
+    if (!payload?.requestId || !payload.userId) return
 
     try {
       const result = await performFollowingListRequest({
         userId: payload.userId,
         count: payload.count,
         cursor: payload.cursor,
-      });
+      })
       postToContent(INTERCEPTOR_EVENT_TYPE_FOLLOWING_LIST_RESPONSE, {
         requestId: payload.requestId,
         data: result,
         userId: payload.userId,
         count: payload.count,
         cursor: payload.cursor,
-      });
+      })
     } catch (error) {
       postToContent(INTERCEPTOR_EVENT_TYPE_FOLLOWING_LIST_ERROR, {
         requestId: payload.requestId,
         error:
-          error instanceof Error ? error.message : String(error ?? "未知错误"),
-      });
+          error instanceof Error ? error.message : String(error ?? '未知错误'),
+      })
     }
   }
-});
+})

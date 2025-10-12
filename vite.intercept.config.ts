@@ -1,23 +1,20 @@
-import { defineConfig } from "vite";
-import { resolve } from "path";
+import { resolve } from 'path'
+import { defineConfig } from 'vite'
 
 export default defineConfig({
   resolve: {
     alias: {
-      "@": resolve(__dirname, "src"),
-      $: resolve(__dirname, "src/utils"),
-      "#": resolve(__dirname, "src/types"),
-      "@common": resolve(__dirname, "src/common"),
+      '@': resolve(__dirname, 'src'),
     },
   },
   build: {
-    outDir: "dist",
+    outDir: 'dist',
     emptyOutDir: false,
     lib: {
-      entry: resolve(__dirname, "src/interceptor/index.ts"),
-      name: "TwitterSidebarIntercept",
-      formats: ["iife"],
-      fileName: () => "intercept.js",
+      entry: resolve(__dirname, 'src/interceptor/index.ts'),
+      name: 'TwitterSidebarIntercept',
+      formats: ['iife'],
+      fileName: () => 'intercept.js',
     },
     rollupOptions: {
       output: {
@@ -25,4 +22,4 @@ export default defineConfig({
       },
     },
   },
-});
+})

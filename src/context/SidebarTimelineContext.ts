@@ -1,31 +1,29 @@
-import { createContext } from "react";
-import type { RefObject } from "react";
+import type { RefObject } from 'react'
+import { createContext } from 'react'
 
 interface SidebarContentRefContextValue {
-  headerRef: RefObject<HTMLElement | null>;
-  scrollAreaRef: RefObject<HTMLElement | null>;
-  emptyAreaRef: RefObject<HTMLElement | null>;
+  headerRef: RefObject<HTMLElement | null>
+  scrollAreaRef: RefObject<HTMLElement | null>
+  emptyAreaRef: RefObject<HTMLElement | null>
 }
 
-export const SidebarContentRefContext =
-  createContext<SidebarContentRefContextValue | null>(null);
+export const SidebarContentRefContext = createContext<SidebarContentRefContextValue | null>(null)
 
 interface SidebarContentContextValue {
-  mainTweetId: string | null;
-  conversationId: string | null;
-  timelineVersion: number;
-  registerMainArticleRef: (ref: RefObject<HTMLElement | null>) => void;
-  mainArticleTopRef: RefObject<number | null>;
+  mainTweetId: string | null
+  conversationId: string | null
+  timelineVersion: number
+  registerMainArticleRef: (ref: RefObject<HTMLElement | null>) => void
+  mainArticleTopRef: RefObject<number | null>
 }
 
-export const SidebarContentContext =
-  createContext<SidebarContentContextValue | null>(null);
+export const SidebarContentContext = createContext<SidebarContentContextValue | null>(null)
 
 interface SidebarFlipContextValue {
-  register: (fn: () => void) => () => void;
-  refreshAll: () => void;
+  register: (fn: () => void) => () => void
+  refreshAll: () => void
 }
 
 export const SidebarFlipContext = createContext<SidebarFlipContextValue | null>(
-  null
-);
+  null,
+)

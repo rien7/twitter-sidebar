@@ -14,11 +14,6 @@
     "noEmit": true,
     "paths": {
       "@/*": ["src/*"],
-      "$/*": ["src/utils/*"],
-      "#/*": ["src/types/*"],
-      "@common/*": ["src/common/*"],
-      "@icons/*": ["src/icons/*"],
-      "@store/*": ["src/store/*"],
     },
     "jsx": "react-jsx",
     "types": [

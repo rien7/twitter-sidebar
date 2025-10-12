@@ -1,3 +1,6 @@
+import type { JSX } from 'react'
+
+import { getCachedAvatarForTweet } from '@/store/avatarStore'
 import type {
   HashtagEntity,
   LegacyTweet,
@@ -6,56 +9,54 @@ import type {
   TweetResult,
   UrlEntity,
   UserMentionEntity,
-} from "@/types/response";
-import type { JSX } from "react";
-import { getAvatarFromUser, getUserFromTweet } from "@/utils/responseData";
-import { getCachedAvatarForTweet } from "@/store/avatarStore";
-import { renderWithTwemoji } from "@/utils/twemoji";
+} from '@/types/response'
+import { getAvatarFromUser, getUserFromTweet } from '@/utils/responseData'
+import { renderWithTwemoji } from '@/utils/twemoji'
 
-const fullCountFormatter = new Intl.NumberFormat();
+const fullCountFormatter = new Intl.NumberFormat()
 const shortCountFormatter = new Intl.NumberFormat(undefined, {
-  notation: "compact",
-  compactDisplay: "short",
-});
+  notation: 'compact',
+  compactDisplay: 'short',
+})
 
 export const formatCount = (value?: number | null): string | null => {
-  if (typeof value !== "number" || Number.isNaN(value)) return null;
-  return shortCountFormatter.format(value);
-};
+  if (typeof value !== 'number' || Number.isNaN(value)) return null
+  return shortCountFormatter.format(value)
+}
 
 export const getFullTextAndEntities = (
-  tweet: TweetResult
+  tweet: TweetResult,
 ): {
-  text: string;
-  entities?: LegacyTweet["entities"];
-  displayRange: [number, number];
-  quoteUrl?: string;
-  media?: MediaEntity[];
+  text: string
+  entities?: LegacyTweet['entities']
+  displayRange: [number, number]
+  quoteUrl?: string
+  media?: MediaEntity[]
 } => {
-  const legacy = tweet.legacy;
+  const legacy = tweet.legacy
   const noteTweetResult = tweet.note_tweet?.note_tweet_results?.result as
-    | { text?: string; entity_set?: LegacyTweet["entities"] }
-    | undefined;
+    | { text?: string, entity_set?: LegacyTweet['entities'] }
+    | undefined
 
   if (noteTweetResult?.text) {
-    const characters = Array.from(noteTweetResult.text);
+    const characters = Array.from(noteTweetResult.text)
     return {
       text: noteTweetResult.text,
       entities: noteTweetResult.entity_set ?? legacy?.entities,
       displayRange: [0, characters.length],
       quoteUrl: legacy?.quoted_status_permalink?.url,
       media:
-        legacy?.extended_entities?.media ??
-        legacy?.entities?.media ??
-        undefined,
-    };
+        legacy?.extended_entities?.media
+        ?? legacy?.entities?.media
+        ?? undefined,
+    }
   }
 
-  const text = legacy?.full_text ?? "";
+  const text = legacy?.full_text ?? ''
   const displayRange = legacy?.display_text_range ?? [
     0,
     Array.from(text).length,
-  ];
+  ]
   return {
     text,
     entities: legacy?.entities,
@@ -63,152 +64,152 @@ export const getFullTextAndEntities = (
     quoteUrl: legacy?.quoted_status_permalink?.url,
     media:
       legacy?.extended_entities?.media ?? legacy?.entities?.media ?? undefined,
-  };
-};
+  }
+}
 
-type RichTextNode = { key: string; node: JSX.Element };
+type RichTextNode = { key: string, node: JSX.Element }
 
 interface TweetCardImageInfo {
-  url: string;
-  width?: number;
-  height?: number;
-  alt?: string;
+  url: string
+  width?: number
+  height?: number
+  alt?: string
 }
 
 export interface TweetCardInfo {
-  url: string;
-  displayUrl?: string;
-  title?: string;
-  description?: string;
-  image?: TweetCardImageInfo | null;
-  type?: string;
-  rawUrl?: string;
+  url: string
+  displayUrl?: string
+  title?: string
+  description?: string
+  image?: TweetCardImageInfo | null
+  type?: string
+  rawUrl?: string
 }
 
 type NormalizedEntity = {
-  kind: "url" | "mention" | "hashtag" | "cashtag" | "skip";
-  start: number;
-  end: number;
-  href?: string;
-  display?: string;
-};
+  kind: 'url' | 'mention' | 'hashtag' | 'cashtag' | 'skip'
+  start: number
+  end: number
+  href?: string
+  display?: string
+}
 
 export const extractCardInfo = (tweet: TweetResult): TweetCardInfo | null => {
-  const legacyCard = tweet.card?.legacy;
+  const legacyCard = tweet.card?.legacy
   if (
-    !legacyCard ||
-    !legacyCard.binding_values ||
-    !legacyCard.url?.startsWith("https://")
+    !legacyCard
+    || !legacyCard.binding_values
+    || !legacyCard.url?.startsWith('https://')
   )
-    return null;
+    return null
 
-  const valueMap = new Map<string, TweetCardBindingValue["value"]>();
+  const valueMap = new Map<string, TweetCardBindingValue['value']>()
   if (Array.isArray(legacyCard.binding_values)) {
     legacyCard.binding_values.forEach((binding) => {
-      if (!binding?.key || !binding.value) return;
-      valueMap.set(binding.key, binding.value);
-    });
+      if (!binding?.key || !binding.value) return
+      valueMap.set(binding.key, binding.value)
+    })
   } else {
     for (const [key, value] of Object.entries(legacyCard.binding_values)) {
-      if (!key || !value) continue;
-      valueMap.set(key, value);
+      if (!key || !value) continue
+      valueMap.set(key, value)
     }
   }
 
-  if (valueMap.size === 0) return null;
+  if (valueMap.size === 0) return null
 
   const getString = (key: string): string | undefined => {
-    const value = valueMap.get(key);
-    if (!value) return undefined;
+    const value = valueMap.get(key)
+    if (!value) return undefined
     if (
-      typeof value.string_value === "string" &&
-      value.string_value.length > 0
+      typeof value.string_value === 'string'
+      && value.string_value.length > 0
     ) {
-      return value.string_value;
+      return value.string_value
     }
-    if (typeof value.scribe_key === "string" && value.scribe_key.length > 0) {
-      return value.scribe_key;
+    if (typeof value.scribe_key === 'string' && value.scribe_key.length > 0) {
+      return value.scribe_key
     }
-    return undefined;
-  };
+    return undefined
+  }
 
-  const getImage = (key: string) => valueMap.get(key)?.image_value;
+  const getImage = (key: string) => valueMap.get(key)?.image_value
 
-  const rawUrl = getString("card_url") ?? legacyCard.url ?? undefined;
-  const vanityUrl = getString("vanity_url");
-  const domain = getString("domain");
-  const title = getString("title");
-  const description = getString("description");
-  const type = legacyCard.name;
+  const rawUrl = getString('card_url') ?? legacyCard.url ?? undefined
+  const vanityUrl = getString('vanity_url')
+  const domain = getString('domain')
+  const title = getString('title')
+  const description = getString('description')
+  const type = legacyCard.name
 
-  const altText =
-    getString("summary_photo_image_alt_text") ??
-    getString("photo_image_full_size_alt_text") ??
-    getString("thumbnail_image_alt_text") ??
-    undefined;
+  const altText
+    = getString('summary_photo_image_alt_text')
+      ?? getString('photo_image_full_size_alt_text')
+      ?? getString('thumbnail_image_alt_text')
+      ?? undefined
 
   const imageCandidateKeys = [
-    "summary_photo_image_large",
-    "summary_photo_image",
-    "summary_photo_image_small",
-    "photo_image_full_size_large",
-    "photo_image_full_size",
-    "photo_image_full_size_small",
-    "thumbnail_image_large",
-    "thumbnail_image",
-    "photo_image_full_size_original",
-    "summary_photo_image_original",
-  ];
+    'summary_photo_image_large',
+    'summary_photo_image',
+    'summary_photo_image_small',
+    'photo_image_full_size_large',
+    'photo_image_full_size',
+    'photo_image_full_size_small',
+    'thumbnail_image_large',
+    'thumbnail_image',
+    'photo_image_full_size_original',
+    'summary_photo_image_original',
+  ]
 
-  let image: TweetCardImageInfo | null = null;
+  let image: TweetCardImageInfo | null = null
   for (const key of imageCandidateKeys) {
-    const candidate = getImage(key);
+    const candidate = getImage(key)
     if (candidate?.url) {
       image = {
         url: candidate.url,
         width: candidate.width,
         height: candidate.height,
         alt: altText ?? description ?? title,
-      };
-      break;
+      }
+      break
     }
   }
 
-  const urls = tweet.legacy?.entities?.urls ?? [];
+  const urls = tweet.legacy?.entities?.urls ?? []
   const matchedEntity = (() => {
     if (rawUrl) {
       return urls.find(
-        (url) =>
-          url.url === rawUrl ||
-          url.expanded_url === rawUrl ||
-          url.unwound_url === rawUrl ||
-          (vanityUrl ? url.display_url === vanityUrl : false)
-      );
+        url =>
+          url.url === rawUrl
+          || url.expanded_url === rawUrl
+          || url.unwound_url === rawUrl
+          || (vanityUrl ? url.display_url === vanityUrl : false),
+      )
     }
     if (vanityUrl) {
-      return urls.find((url) => url.display_url === vanityUrl);
+      return urls.find(url => url.display_url === vanityUrl)
     }
-    return undefined;
-  })();
+    return undefined
+  })()
 
-  let resolvedHref: string | undefined =
-    matchedEntity?.expanded_url ?? matchedEntity?.unwound_url;
+  let resolvedHref: string | undefined
+    = matchedEntity?.expanded_url ?? matchedEntity?.unwound_url
   if (!resolvedHref && rawUrl) {
-    resolvedHref = rawUrl.startsWith("http") ? rawUrl : `https://${rawUrl}`;
+    resolvedHref = rawUrl.startsWith('http') ? rawUrl : `https://${rawUrl}`
   }
   if (!resolvedHref && vanityUrl) {
-    resolvedHref = vanityUrl.startsWith("http")
+    resolvedHref = vanityUrl.startsWith('http')
       ? vanityUrl
-      : `https://${vanityUrl}`;
+      : `https://${vanityUrl}`
   }
   if (!resolvedHref && domain) {
-    resolvedHref = `https://${domain}`;
+    resolvedHref = `https://${domain}`
   }
 
-  if (!resolvedHref) return null;
+  if (!resolvedHref) return null
 
-  const displayUrl =
-    vanityUrl ?? matchedEntity?.display_url ?? domain ?? undefined;
+  const displayUrl
+    = vanityUrl ?? matchedEntity?.display_url ?? domain ?? undefined
 
   return {
     url: resolvedHref,
@@ -218,49 +219,49 @@ export const extractCardInfo = (tweet: TweetResult): TweetCardInfo | null => {
     image,
     type,
     rawUrl: matchedEntity?.url ?? rawUrl,
-  };
-};
+  }
+}
 
 export const buildRichTextNodes = (tweet: TweetResult): RichTextNode[] => {
-  const { text, entities, displayRange, quoteUrl, media } =
-    getFullTextAndEntities(tweet);
-  if (!text) return [];
+  const { text, entities, displayRange, quoteUrl, media }
+    = getFullTextAndEntities(tweet)
+  if (!text) return []
 
-  const characters = Array.from(text);
-  const [rawStart, rawEnd] = displayRange;
-  const start = Math.max(0, rawStart);
-  const end = Math.min(characters.length, rawEnd);
-  const normalized: NormalizedEntity[] = [];
-  const skipUrls = new Set<string>();
-  if (quoteUrl) skipUrls.add(quoteUrl);
+  const characters = Array.from(text)
+  const [rawStart, rawEnd] = displayRange
+  const start = Math.max(0, rawStart)
+  const end = Math.min(characters.length, rawEnd)
+  const normalized: NormalizedEntity[] = []
+  const skipUrls = new Set<string>()
+  if (quoteUrl) skipUrls.add(quoteUrl)
   media?.forEach((item) => {
-    if (item.url) skipUrls.add(item.url);
-  });
+    if (item.url) skipUrls.add(item.url)
+  })
 
-  const card = extractCardInfo(tweet);
+  const card = extractCardInfo(tweet)
   if (card?.rawUrl) {
-    skipUrls.add(card.rawUrl);
+    skipUrls.add(card.rawUrl)
   }
   if (card?.url) {
-    skipUrls.add(card.url);
+    skipUrls.add(card.url)
   }
   if (card?.displayUrl) {
-    skipUrls.add(card.displayUrl);
+    skipUrls.add(card.displayUrl)
   }
 
   const pushEntity = (
-    kind: NormalizedEntity["kind"],
-    entity: { indices?: [number, number]; href?: string; display?: string }
+    kind: NormalizedEntity['kind'],
+    entity: { indices?: [number, number], href?: string, display?: string },
   ) => {
-    const [entityStart, entityEnd] = entity.indices ?? [0, 0];
-    if (entityEnd <= entityStart) return;
+    const [entityStart, entityEnd] = entity.indices ?? [0, 0]
+    if (entityEnd <= entityStart) return
     normalized.push({
       kind,
       start: entityStart,
       end: entityEnd,
       href: entity.href,
       display: entity.display,
-    });
+    })
   };
 
   (entities?.urls ?? []).forEach((url: UrlEntity) => {
@@ -269,72 +270,72 @@ export const buildRichTextNodes = (tweet: TweetResult): RichTextNode[] => {
       url.expanded_url,
       url.unwound_url,
       url.display_url,
-    ];
+    ]
     const shouldSkip = candidates.some(
-      (candidate) => candidate && skipUrls.has(candidate)
-    );
+      candidate => candidate && skipUrls.has(candidate),
+    )
     if (shouldSkip) {
-      pushEntity("skip", { indices: url.indices });
-      return;
+      pushEntity('skip', { indices: url.indices })
+      return
     }
-    const href = url.expanded_url ?? url.display_url ?? url.url;
-    const display = url.display_url ?? url.expanded_url ?? url.url;
-    pushEntity("url", { indices: url.indices, href, display });
+    const href = url.expanded_url ?? url.display_url ?? url.url
+    const display = url.display_url ?? url.expanded_url ?? url.url
+    pushEntity('url', { indices: url.indices, href, display })
   });
 
   (entities?.user_mentions ?? []).forEach((mention: UserMentionEntity) => {
-    const screenName = mention.screen_name ?? "";
-    const href = `https://twitter.com/${screenName}`;
-    pushEntity("mention", { indices: mention.indices, href });
+    const screenName = mention.screen_name ?? ''
+    const href = `https://twitter.com/${screenName}`
+    pushEntity('mention', { indices: mention.indices, href })
   });
 
   (entities?.hashtags ?? []).forEach((hashtag: HashtagEntity) => {
     const href = `https://twitter.com/hashtag/${encodeURIComponent(
-      hashtag.text
-    )}?src=hashtag_click`;
-    pushEntity("hashtag", { indices: hashtag.indices, href });
-  });
+      hashtag.text,
+    )}?src=hashtag_click`
+    pushEntity('hashtag', { indices: hashtag.indices, href })
+  })
 
-  const symbols =
-    (
+  const symbols
+    = (
       entities as {
-        symbols?: Array<{ text?: string; indices?: [number, number] }>;
+        symbols?: Array<{ text?: string, indices?: [number, number] }>
       }
-    )?.symbols ?? [];
+    )?.symbols ?? []
   symbols.forEach((symbol) => {
-    if (!symbol.indices) return;
-    const textValue = symbol.text ?? "";
+    if (!symbol.indices) return
+    const textValue = symbol.text ?? ''
     const href = `https://twitter.com/search?q=%24${encodeURIComponent(
-      textValue
-    )}&src=cashtag_click`;
-    pushEntity("cashtag", { indices: symbol.indices, href });
-  });
+      textValue,
+    )}&src=cashtag_click`
+    pushEntity('cashtag', { indices: symbol.indices, href })
+  })
 
-  normalized.sort((a, b) => a.start - b.start);
+  normalized.sort((a, b) => a.start - b.start)
 
-  const nodes: RichTextNode[] = [];
-  let cursor = start;
-  let keyIndex = 0;
+  const nodes: RichTextNode[] = []
+  let cursor = start
+  let keyIndex = 0
 
   const pushPlain = (from: number, to: number) => {
-    if (to <= from) return;
-    const value = characters.slice(from, to).join("");
-    if (!value) return;
+    if (to <= from) return
+    const value = characters.slice(from, to).join('')
+    if (!value) return
     nodes.push({
       key: `text-${keyIndex}`,
       node: <>{renderWithTwemoji(value)}</>,
-    });
-    keyIndex += 1;
-  };
+    })
+    keyIndex += 1
+  }
 
   normalized.forEach((entity, index) => {
-    if (entity.end <= start || entity.start >= end) return;
-    const entityStart = Math.max(entity.start, start);
-    const entityEnd = Math.min(entity.end, end);
-    pushPlain(cursor, entityStart);
-    if (entity.kind !== "skip") {
-      const label = characters.slice(entityStart, entityEnd).join("");
-      const content = entity.display ?? label;
+    if (entity.end <= start || entity.start >= end) return
+    const entityStart = Math.max(entity.start, start)
+    const entityEnd = Math.min(entity.end, end)
+    pushPlain(cursor, entityStart)
+    if (entity.kind !== 'skip') {
+      const label = characters.slice(entityStart, entityEnd).join('')
+      const content = entity.display ?? label
       nodes.push({
         key: `entity-${index}`,
         node: (
@@ -347,120 +348,120 @@ export const buildRichTextNodes = (tweet: TweetResult): RichTextNode[] => {
             {renderWithTwemoji(content)}
           </a>
         ),
-      });
+      })
     }
-    cursor = entityEnd;
-  });
+    cursor = entityEnd
+  })
 
-  pushPlain(cursor, end);
+  pushPlain(cursor, end)
 
-  return nodes;
-};
+  return nodes
+}
 
 export const extractAvatar = (tweet: TweetResult): string | undefined => {
-  const user = getUserFromTweet(tweet);
-  const direct = getAvatarFromUser(user);
-  if (direct) return direct;
+  const user = getUserFromTweet(tweet)
+  const direct = getAvatarFromUser(user)
+  if (direct) return direct
   return (
-    getCachedAvatarForTweet(tweet, "x96") ??
-    getCachedAvatarForTweet(tweet, "bigger") ??
-    getCachedAvatarForTweet(tweet, "normal")
-  );
-};
+    getCachedAvatarForTweet(tweet, 'x96')
+    ?? getCachedAvatarForTweet(tweet, 'bigger')
+    ?? getCachedAvatarForTweet(tweet, 'normal')
+  )
+}
 
 export const extractAvatarCache = (tweet: TweetResult): string | undefined =>
-  getCachedAvatarForTweet(tweet, "x96");
+  getCachedAvatarForTweet(tweet, 'x96')
 
 export const extractName = (
-  tweet: TweetResult
+  tweet: TweetResult,
 ): {
-  name: string;
-  screenName: string;
+  name: string
+  screenName: string
 } => {
   const user = tweet.core?.user_results?.result as
     | {
-        legacy?: { name?: string; screen_name?: string };
-        core?: { name?: string; screen_name?: string };
-      }
-    | undefined;
+      legacy?: { name?: string, screen_name?: string }
+      core?: { name?: string, screen_name?: string }
+    }
+    | undefined
   return {
-    name: user?.legacy?.name ?? user?.core?.name ?? "未知用户",
+    name: user?.legacy?.name ?? user?.core?.name ?? '未知用户',
     screenName:
-      user?.legacy?.screen_name ?? user?.core?.screen_name ?? "unknown",
-  };
-};
+      user?.legacy?.screen_name ?? user?.core?.screen_name ?? 'unknown',
+  }
+}
 
 const dateDiff = (
   dateA: Date,
-  dateB: Date
-): { unit: "s" | "m" | "h" | "d"; value: number } => {
-  const timeA = Math.floor(dateA.getTime() / 1000);
-  const timeB = Math.floor(dateB.getTime() / 1000);
-  const diff = Math.abs(timeA - timeB);
-  if (diff < 60) return { unit: "s", value: diff };
-  if (diff < 60 * 60) return { unit: "m", value: Math.round(diff / 60) };
+  dateB: Date,
+): { unit: 's' | 'm' | 'h' | 'd', value: number } => {
+  const timeA = Math.floor(dateA.getTime() / 1000)
+  const timeB = Math.floor(dateB.getTime() / 1000)
+  const diff = Math.abs(timeA - timeB)
+  if (diff < 60) return { unit: 's', value: diff }
+  if (diff < 60 * 60) return { unit: 'm', value: Math.round(diff / 60) }
   if (diff < 60 * 60 * 24) {
-    return { unit: "h", value: Math.round(diff / 60 / 60) };
+    return { unit: 'h', value: Math.round(diff / 60 / 60) }
   }
-  return { unit: "d", value: Math.round(diff / 60 / 60 / 24) };
-};
+  return { unit: 'd', value: Math.round(diff / 60 / 60 / 24) }
+}
 
 export const formatDateTime = (
   createdAt?: string,
-  type: "long" | "relative" = "relative"
+  type: 'long' | 'relative' = 'relative',
 ): string | null => {
-  if (!createdAt) return null;
-  const date = new Date(createdAt);
-  if (Number.isNaN(date.getTime())) return null;
-  if (type === "long") {
+  if (!createdAt) return null
+  const date = new Date(createdAt)
+  if (Number.isNaN(date.getTime())) return null
+  if (type === 'long') {
     return new Intl.DateTimeFormat(undefined, {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      hour: "numeric",
-      minute: "numeric",
-    }).format(date);
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: 'numeric',
+    }).format(date)
   }
-  const now = new Date();
-  const diff = dateDiff(now, date);
+  const now = new Date()
+  const diff = dateDiff(now, date)
   switch (diff.unit) {
-    case "s":
-      return "now";
-    case "m":
-    case "h":
-      return `${diff.value}${diff.unit}`;
-    case "d":
-      if (diff.value <= 3) return `${diff.value}${diff.unit}`;
+    case 's':
+      return 'now'
+    case 'm':
+    case 'h':
+      return `${diff.value}${diff.unit}`
+    case 'd':
+      if (diff.value <= 3) return `${diff.value}${diff.unit}`
       return new Intl.DateTimeFormat(undefined, {
-        year: now.getFullYear() === date.getFullYear() ? undefined : "numeric",
-        month: "short",
-        day: "numeric",
-      }).format(date);
+        year: now.getFullYear() === date.getFullYear() ? undefined : 'numeric',
+        month: 'short',
+        day: 'numeric',
+      }).format(date)
   }
-};
+}
 
 export const extractViews = (tweet: TweetResult): string | null => {
-  const count = Number(tweet.views?.count ?? "");
-  if (!Number.isFinite(count) || count <= 0) return null;
-  return `${fullCountFormatter.format(count)} 次浏览`;
-};
+  const count = Number(tweet.views?.count ?? '')
+  if (!Number.isFinite(count) || count <= 0) return null
+  return `${fullCountFormatter.format(count)} 次浏览`
+}
 
 export const parseSource = (
-  sourceHtml?: string
-): { href: string; text: string } | null => {
-  if (!sourceHtml) return null;
+  sourceHtml?: string,
+): { href: string, text: string } | null => {
+  if (!sourceHtml) return null
   try {
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(sourceHtml, "text/html");
-    const link = doc.querySelector("a");
-    if (!link) return null;
-    const href = link.getAttribute("href") ?? "#";
-    const text = link.textContent?.trim() ?? "";
-    if (!text) return null;
-    return { href, text };
+    const parser = new DOMParser()
+    const doc = parser.parseFromString(sourceHtml, 'text/html')
+    const link = doc.querySelector('a')
+    if (!link) return null
+    const href = link.getAttribute('href') ?? '#'
+    const text = link.textContent?.trim() ?? ''
+    if (!text) return null
+    return { href, text }
   } catch {
-    return null;
+    return null
   }
-};
+}
 
-export type { RichTextNode };
+export type { RichTextNode }

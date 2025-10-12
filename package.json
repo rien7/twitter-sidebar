@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "node scripts/build.mjs",
-    "lint": "eslint .",
+    "lint": "eslint . --fix",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -15,6 +15,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.36.0",
+    "@stylistic/eslint-plugin": "^5.4.0",
     "@tailwindcss/vite": "^4.1.14",
     "@types/chrome": "^0.1.18",
     "@types/he": "^1.2.3",
@@ -27,10 +28,13 @@
     "archiver": "^7.0.1",
     "babel-plugin-react-compiler": "19.1.0-rc.3",
     "eslint": "^9.36.0",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^5.2.0",
-    "eslint-plugin-react-refresh": "^0.4.22",
+    "eslint-plugin-simple-import-sort": "^12.1.1",
     "globals": "^16.4.0",
     "he": "^1.2.0",
+    "jiti": "^2.6.1",
     "tailwindcss": "^4.1.14",
     "twemoji-parser": "^14.0.0",
     "twitter-text": "^3.1.0",

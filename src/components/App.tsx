@@ -1,10 +1,12 @@
-import { MediaOverlayProvider } from "@/components/mediaOverlayProvider";
-import { SidebarSurface } from "@/components/sidebar/SidebarSurface";
+import { MediaOverlayProvider } from '@/components/mediaOverlayProvider'
+import { SidebarSurface } from '@/components/sidebar/SidebarSurface'
 
-const App = () => (
-  <MediaOverlayProvider>
-    <SidebarSurface />
-  </MediaOverlayProvider>
-);
+function App() {
+  return (
+    <MediaOverlayProvider>
+      <SidebarSurface />
+    </MediaOverlayProvider>
+  )
+}
 
-export default App;
+export default App
