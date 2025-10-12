@@ -35,10 +35,13 @@ type Snapshot = {
   left: number; // viewport left
   width: number;
   height: number;
-  globalTop: number; // viewport + scroll
-  globalLeft: number;
 };
 
+type Entry = {
+  key: number;
+  el: HTMLElement;
+  type: FlipType;
+};
 type EntryRecord = {
   key: number;
   el: HTMLElement;
@@ -74,6 +77,33 @@ function resolveEl(t: Target): HTMLElement | null {
   return (t as HTMLElement) ?? null;
 }
 
+function buildEntryFromTarget(targets: (Target | TargetOption)[]): Entry[] {
+  const entries = targets
+    .map(
+      (
+        t,
+        idx
+      ): {
+        key: number;
+        el: HTMLElement | null;
+        type: FlipType;
+      } => {
+        const opt: TargetOption =
+          typeof t === "string" ||
+          (typeof t === "object" && t && !("target" in t))
+            ? { target: t as Target, type: "scale" }
+            : (t as TargetOption);
+        return {
+          key: idx,
+          el: resolveEl(opt.target),
+          type: opt.type ?? "scale",
+        };
+      }
+    )
+    .filter((entry): entry is Entry => Boolean(entry.el));
+  return entries;
+}
+
 // We include more text-related props to better match final wrapping
 function pickTextStyles(
   el: HTMLElement | null
@@ -91,21 +121,6 @@ function pickTextStyles(
   } as Partial<CSSStyleDeclaration>;
 }
 
-function getScrollOffsets() {
-  if (typeof window === "undefined") return { x: 0, y: 0 };
-  const x =
-    window.scrollX ??
-    window.pageXOffset ??
-    document.documentElement?.scrollLeft ??
-    0;
-  const y =
-    window.scrollY ??
-    window.pageYOffset ??
-    document.documentElement?.scrollTop ??
-    0;
-  return { x, y };
-}
-
 function measure(el: HTMLElement, rootEl: HTMLElement | null): Snapshot {
   const rect = el.getBoundingClientRect();
   const baseEl = rootEl?.querySelector("[data-flip-base-layer]");
@@ -116,14 +131,11 @@ function measure(el: HTMLElement, rootEl: HTMLElement | null): Snapshot {
     top = top - baseRect.top;
     left = left - baseRect.left;
   }
-  const { x, y } = getScrollOffsets();
   return {
     top: top,
     left: left,
     width: rect.width,
     height: rect.height,
-    globalTop: top + y,
-    globalLeft: left + x,
   };
 }
 
@@ -177,7 +189,7 @@ function updateBaseline(
 
 export function useFlip(
   targets: (Target | TargetOption)[],
-  deps?: ReadonlyArray<unknown>,
+  deps: ReadonlyArray<unknown>,
   opts: Options = {}
 ) {
   const {
@@ -190,44 +202,15 @@ export function useFlip(
   const firstRectsRef = useRef<Map<number, SnapshotRecord>>(new Map());
   const firstStylesRef = useRef<Map<number, StyleRecord>>(new Map());
   const readyOnceRef = useRef(false);
-  const prevRootSnapshotRef = useRef<Snapshot | null>(null);
+  const skipCleanRef = useRef(false);
 
   useLayoutEffect(() => {
     const firstRectsMap = firstRectsRef.current;
     const firstStylesMap = firstStylesRef.current;
     const rootEl = root?.current ?? null;
-    const entries = targets
-      .map(
-        (
-          t,
-          idx
-        ): {
-          key: number;
-          el: HTMLElement | null;
-          type: FlipType;
-        } => {
-          const opt: TargetOption =
-            typeof t === "string" ||
-            (typeof t === "object" && t && !("target" in t))
-              ? { target: t as Target, type: "scale" }
-              : (t as TargetOption);
-          return {
-            key: idx,
-            el: resolveEl(opt.target),
-            type: opt.type ?? "scale",
-          };
-        }
-      )
-      .filter(
-        (entry): entry is { key: number; el: HTMLElement; type: FlipType } =>
-          Boolean(entry.el)
-      );
-
-    const rootSnapshot = rootEl ? measure(rootEl, rootEl) : null;
-    const prevRootSnapshot = prevRootSnapshotRef.current;
+    const entries = buildEntryFromTarget(targets);
 
     if (!entries.length) {
-      prevRootSnapshotRef.current = rootSnapshot;
       return;
     }
 
@@ -251,13 +234,9 @@ export function useFlip(
           firstStylesMap.delete(entry.key);
         }
       });
-      prevRootSnapshotRef.current = rootSnapshot;
       readyOnceRef.current = true;
       return;
     }
-
-    const isClient = typeof window !== "undefined";
-    if (!isClient) return;
 
     const records: EntryRecord[] = entries.map((entry) => {
       const last = measure(entry.el, rootEl);
@@ -271,21 +250,7 @@ export function useFlip(
       const baseline = firstRectsMap.get(entry.key);
       const styleBaseline = firstStylesMap.get(entry.key);
       const sameElement = baseline?.el === entry.el;
-      const sameScrollParent =
-        sameElement && baseline?.scrollParent === scrollParent;
-      let first: Snapshot | null = null;
-      if (sameElement && sameScrollParent && baseline) {
-        const deltaX = scrollLeft - baseline.scrollLeft;
-        const deltaY = scrollTop - baseline.scrollTop;
-        const snap = baseline.snapshot;
-        first = {
-          ...snap,
-          top: snap.top - deltaY,
-          left: snap.left - deltaX,
-          globalTop: snap.globalTop - deltaY,
-          globalLeft: snap.globalLeft - deltaX,
-        };
-      }
+      const first = baseline?.snapshot ?? null;
       const firstStyle =
         sameElement && styleBaseline?.el === entry.el
           ? styleBaseline.style ?? null
@@ -306,20 +271,11 @@ export function useFlip(
       };
     });
 
-    const rootHasShifted =
-      !!prevRootSnapshot &&
-      !!rootSnapshot &&
-      (Math.abs(prevRootSnapshot.globalLeft - rootSnapshot.globalLeft) > 4 ||
-        Math.abs(prevRootSnapshot.globalTop - rootSnapshot.globalTop) > 4);
-
-    prevRootSnapshotRef.current = rootSnapshot;
-
     const isReduced =
       reduceMotion ??
       window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
     const overlayRoot = resolveOverlay(rootEl);
-    const { x: currentScrollX, y: currentScrollY } = getScrollOffsets();
 
     type NodeRec = {
       type: FlipType;
@@ -329,13 +285,6 @@ export function useFlip(
     };
     const nodes: NodeRec[] = [];
     const prevVis = new Map<number, string>();
-
-    if (rootHasShifted) {
-      records.forEach((record) => {
-        updateBaseline(record, firstRectsMap, firstStylesMap);
-      });
-      return;
-    }
 
     let usableCount = 0;
 
@@ -347,8 +296,8 @@ export function useFlip(
         return;
       }
 
-      const dx = first.globalLeft - last.globalLeft;
-      const dy = first.globalTop - last.globalTop;
+      const dx = first.left - last.left;
+      const dy = first.top - last.top;
       const sx = last.width ? first.width / Math.max(1, last.width) : 1;
       const sy = last.height ? first.height / Math.max(1, last.height) : 1;
 
@@ -375,8 +324,8 @@ export function useFlip(
         // --- DEST-SIZED WRAPPER + COUNTER-SCALE ---
         const wrapper = document.createElement("div");
         wrapper.style.position = "fixed";
-        wrapper.style.left = `${last.globalLeft - currentScrollX}px`;
-        wrapper.style.top = `${last.globalTop - currentScrollY}px`;
+        wrapper.style.left = `${last.left}px`;
+        wrapper.style.top = `${last.top}px`;
         wrapper.style.width = `${last.width}px`;
         wrapper.style.height = `${last.height}px`;
         wrapper.style.transformOrigin = "top left";
@@ -421,10 +370,8 @@ export function useFlip(
       } else {
         // --- ORIGINAL CLONE FLOW ---
         clone.style.position = "fixed";
-        const startTop = first.globalTop - currentScrollY;
-        const startLeft = first.globalLeft - currentScrollX;
-        clone.style.top = `${startTop}px`;
-        clone.style.left = `${startLeft}px`;
+        clone.style.top = `${first.top}px`;
+        clone.style.left = `${first.left}px`;
         if (type !== "text") {
           clone.style.width = `${first.width}px`;
           clone.style.height = `${first.height}px`;
@@ -451,8 +398,8 @@ export function useFlip(
           clone.style.transition = parts.join(",");
 
           const transform: string[] = [];
-          const translateX = record.last.globalLeft - record.first!.globalLeft;
-          const translateY = record.last.globalTop - record.first!.globalTop;
+          const translateX = record.last.left - record.first!.left;
+          const translateY = record.last.top - record.first!.top;
           transform.push(`translate3d(${translateX}px, ${translateY}px, 0)`);
           if (type === "scale") {
             const sxx = record.last.width
@@ -523,6 +470,9 @@ export function useFlip(
         el.removeEventListener("transitioncancel", onEnd);
       });
       finish();
+      document
+        .querySelectorAll("div[data-flip-layer] > *")
+        .forEach((e) => e.remove());
     }, duration + 160);
 
     return () => {
@@ -534,47 +484,23 @@ export function useFlip(
       nodes.forEach(({ record }) => {
         record.el.style.visibility = prevVis.get(record.key) ?? "";
       });
-      records.forEach((record) =>
-        updateBaseline(record, firstRectsMap, firstStylesMap)
-      );
+      if (!skipCleanRef.current) {
+        records.forEach((record) =>
+          updateBaseline(record, firstRectsMap, firstStylesMap)
+        );
+      } else {
+        skipCleanRef.current = false;
+      }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, deps ?? undefined);
+  }, deps);
 
   const refreshBaseline = useCallback(() => {
     const rootEl = root?.current ?? null;
     const firstRectsMap = firstRectsRef.current;
     const firstStylesMap = firstStylesRef.current;
 
-    const entries = targets
-      .map(
-        (
-          t,
-          idx
-        ): {
-          key: number;
-          el: HTMLElement | null;
-          type: FlipType;
-        } => {
-          const opt: TargetOption =
-            typeof t === "string" ||
-            (typeof t === "object" && t && !("target" in t))
-              ? { target: t as Target, type: "scale" }
-              : (t as TargetOption);
-          return {
-            key: idx,
-            el: resolveEl(opt.target),
-            type: opt.type ?? "scale",
-          };
-        }
-      )
-      .filter(
-        (entry): entry is { key: number; el: HTMLElement; type: FlipType } =>
-          Boolean(entry.el)
-      );
-
-    const rootSnapshot = rootEl ? measure(rootEl, rootEl) : null;
-    prevRootSnapshotRef.current = rootSnapshot;
+    const entries = buildEntryFromTarget(targets);
 
     entries.forEach((entry) => {
       const snapshot = measure(entry.el, rootEl);
@@ -597,6 +523,7 @@ export function useFlip(
       }
     });
 
+    skipCleanRef.current = true;
     readyOnceRef.current = true;
   }, [targets, root]);
   return {

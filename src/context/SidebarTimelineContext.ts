@@ -20,3 +20,12 @@ interface SidebarContentContextValue {
 
 export const SidebarContentContext =
   createContext<SidebarContentContextValue | null>(null);
+
+interface SidebarFlipContextValue {
+  register: (fn: () => void) => () => void;
+  refreshAll: () => void;
+}
+
+export const SidebarFlipContext = createContext<SidebarFlipContextValue | null>(
+  null
+);

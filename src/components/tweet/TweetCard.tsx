@@ -19,7 +19,7 @@ import {
 } from "react";
 import type { MouseEvent as ReactMouseEvent, RefObject } from "react";
 import type { TweetLimitedAction, TweetResult } from "@/types/response";
-import { useFlip } from "@/hooks/useFlip";
+import { Target, TargetOption, useFlip } from "@/hooks/useFlip";
 import { useSidebarRoot } from "@/context/sidebarRoot";
 import { cn } from "@/utils/cn";
 import { openTweetInSidebar } from "@/handlers/sidebarController";
@@ -29,6 +29,7 @@ import { TweetCardContent } from "./TweetCardContent";
 import {
   SidebarContentRefContext,
   SidebarContentContext,
+  SidebarFlipContext,
 } from "@/context/SidebarTimelineContext";
 import { extractPollInfo } from "@/utils/poll";
 
@@ -105,6 +106,8 @@ const TweetCard = ({
   const previousTimelineVersion = useRef<number | null>(null);
   const registerMainArticleRef = sidebarContentContext?.registerMainArticleRef;
   const mainArticleClientTopRef = sidebarContentContext?.mainArticleTopRef;
+
+  const flipRegistry = useContext(SidebarFlipContext);
 
   const composerRef = useRef<ReplyComposerHandle>(null);
   const { composerOpen, onComposerExpand, onComposerCollapse, toggleComposer } =
@@ -221,6 +224,7 @@ const TweetCard = ({
           behavior: "instant",
           top: -mainArticleClientTopRef.current,
         });
+        flipRegistry?.refreshAll();
         mainArticleClientTopRef.current = null;
       }
     }
@@ -236,21 +240,28 @@ const TweetCard = ({
     previousTimelineVersion,
     registerMainArticleRef,
     mainArticleClientTopRef,
+    flipRegistry,
   ]);
 
-  useFlip(
-    [
-      userAvatarRef,
-      { target: userNameRef, type: "text" },
-      { target: userHandleRef, type: "text" },
-      { target: bodyTextRef, type: "reflow" },
-      { target: cardRef, type: "reflow" },
-    ],
-    [variant, tweet.rest_id, composerOpen, mainTweetId],
-    {
-      root: rootRef,
-    }
+  const flipTargets = useMemo(
+    () =>
+      [
+        userAvatarRef,
+        { target: userNameRef, type: "text" },
+        { target: userHandleRef, type: "text" },
+        { target: bodyTextRef, type: "reflow" },
+        { target: cardRef, type: "reflow" },
+      ] as (Target | TargetOption)[],
+    []
   );
+
+  const { refreshBaseline } = useFlip(flipTargets, [variant, mainTweetId], {
+    root: rootRef,
+  });
+
+  useLayoutEffect(() => {
+    return flipRegistry?.register(refreshBaseline);
+  }, [refreshBaseline, flipRegistry]);
 
   useLayoutEffect(() => {
     if (composerOpen) {
@@ -264,6 +275,7 @@ const TweetCard = ({
     if (!onSelect) return;
     if (event.defaultPrevented) return;
     if (mainTweetId === tweet.rest_id) return;
+    flipRegistry?.refreshAll();
     onSelect(tweet, controllerData ?? null, articleRef);
   };
 
