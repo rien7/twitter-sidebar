@@ -2,10 +2,7 @@ import type { CSSProperties, RefObject } from 'react'
 
 import UserHoverCard from '@/components/tweet/UserHoverCard'
 import { ExternalLinkIcon } from '@/icons/ExternalLinkIcon'
-import {
-  BlueVerifiedIcon,
-  ProtectedIcon,
-} from '@/icons/UserBlueAndProtectedIcons'
+import { BlueVerifiedIcon, ProtectedIcon } from '@/icons/UserBlueAndProtectedIcons'
 import type { TweetResult } from '@/types/response'
 import { cn } from '@/utils/cn'
 import { getBlueVerified, getProtected } from '@/utils/responseData'

@@ -1,12 +1,7 @@
 import type { CSSProperties, RefObject } from 'react'
 import { useEffect, useMemo, useRef } from 'react'
 
-import {
-  SIDEBAR_COLLAPSED_MAX_WIDTH,
-  SIDEBAR_WIDTH_COLLAPSED,
-  SIDEBAR_WIDTH_MAX,
-  SIDEBAR_WIDTH_MIN,
-} from '@/constants/layout'
+import { SIDEBAR_COLLAPSED_MAX_WIDTH, SIDEBAR_WIDTH_COLLAPSED, SIDEBAR_WIDTH_MAX, SIDEBAR_WIDTH_MIN } from '@/constants/layout'
 import { useMediaOverlay } from '@/context/mediaOverlay'
 import { SidebarRootContext } from '@/context/sidebarRoot'
 import { SidebarContentContext } from '@/context/SidebarTimelineContext'

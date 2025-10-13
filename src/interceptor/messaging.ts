@@ -1,7 +1,4 @@
-import {
-  EXT_BRIDGE_SOURCE,
-  MESSAGE_DIRECTION_FROM_INTERCEPTOR,
-} from '@/common/bridge'
+import { EXT_BRIDGE_SOURCE, MESSAGE_DIRECTION_FROM_INTERCEPTOR } from '@/common/bridge'
 
 /**
  * Convenience helper for sending messages back to the content script.

@@ -1,13 +1,5 @@
 import type { ClipboardEventHandler, FormEvent } from 'react'
-import React, {
-  forwardRef,
-  useCallback,
-  useEffect,
-  useImperativeHandle,
-  useMemo,
-  useRef,
-  useState,
-} from 'react'
+import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react'
 import twttr from 'twitter-text'
 
 import { createReply } from '@/api/twitterGraphql'

@@ -13,12 +13,7 @@ import { TweetResult, TweetWithVisibilityResults } from '@/types/response'
 import { TweetContext } from '@/types/sidebar'
 import { TweetData } from '@/types/tweet'
 
-import {
-  getTweetIdFromTweet,
-  getUserFromTweet,
-  getUserIdFromTweet,
-  unwrapTweetResult,
-} from './responseData'
+import { getTweetIdFromTweet, getUserFromTweet, getUserIdFromTweet, unwrapTweetResult } from './responseData'
 
 type FindTweetDomOptions = {
   allowInteractiveTarget?: boolean

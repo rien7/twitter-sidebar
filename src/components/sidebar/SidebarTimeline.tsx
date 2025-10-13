@@ -2,11 +2,7 @@ import { RefObject, useMemo } from 'react'
 
 import DeletedTweetCard from '@/components/tweet/DeletedTweetCard'
 import TweetCard from '@/components/tweet/TweetCard'
-import {
-  DeletedTweetData,
-  getDeletedTweet,
-  getTweetRelation,
-} from '@/store/tweetsStore'
+import { DeletedTweetData, getDeletedTweet, getTweetRelation } from '@/store/tweetsStore'
 import type { TweetLimitedAction, TweetResult } from '@/types/response'
 import type { SidebarTweetStatus } from '@/types/sidebar'
 import { TweetData, TweetRelation } from '@/types/tweet'

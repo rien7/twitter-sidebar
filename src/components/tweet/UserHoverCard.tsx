@@ -1,17 +1,7 @@
 import type { ReactNode, RefObject } from 'react'
-import {
-  Fragment,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react'
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import {
-  fetchFollowingList,
-  type FollowingListEntry,
-} from '@/api/followingList'
+import { fetchFollowingList, type FollowingListEntry } from '@/api/followingList'
 import { followUser, unfollowUser } from '@/api/friendships'
 import type { UrlEntity, UserResult } from '@/types/response'
 import { cn } from '@/utils/cn'

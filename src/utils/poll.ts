@@ -1,9 +1,5 @@
 import type { TweetPollChoice, TweetPollInfo } from '@/types/poll'
-import type {
-  TweetCardBindingValue,
-  TweetCardBindingValueValue,
-  TweetResult,
-} from '@/types/response'
+import type { TweetCardBindingValue, TweetCardBindingValueValue, TweetResult } from '@/types/response'
 
 const createBindingValueMap = (
   bindingValues:

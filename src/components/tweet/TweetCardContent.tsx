@@ -6,11 +6,7 @@ import TweetActions from '@/components/tweet/TweetActions'
 import TweetPoll from '@/components/tweet/TweetPoll'
 import type { TweetCardInfo } from '@/components/tweet/tweetText'
 import type { TweetPollInfo } from '@/types/poll'
-import type {
-  MediaEntity,
-  TweetLimitedAction,
-  TweetResult,
-} from '@/types/response'
+import type { MediaEntity, TweetLimitedAction, TweetResult } from '@/types/response'
 import { cn } from '@/utils/cn'
 import { getProtected, getUserFromTweet } from '@/utils/responseData'
 

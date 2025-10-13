@@ -10,14 +10,7 @@ import {
   unfavoriteTweet,
 } from '@/api/twitterGraphql'
 import { formatCount } from '@/components/tweet/tweetText'
-import {
-  BookmarkActiveIcon,
-  BookmarkIcon,
-  LikeAnimationIcon,
-  ReplyIcon,
-  RetweetIcon,
-  ViewIcon,
-} from '@/icons/TweetActionIcons'
+import { BookmarkActiveIcon, BookmarkIcon, LikeAnimationIcon, ReplyIcon, RetweetIcon, ViewIcon } from '@/icons/TweetActionIcons'
 import type { TweetResult } from '@/types/response'
 import { cn } from '@/utils/cn'
 

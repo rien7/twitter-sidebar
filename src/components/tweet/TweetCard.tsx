@@ -1,13 +1,5 @@
 import type { MouseEvent as ReactMouseEvent, RefObject } from 'react'
-import {
-  useCallback,
-  useContext,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react'
+import { useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 
 import {
   buildRichTextNodes,
@@ -20,11 +12,7 @@ import {
 } from '@/components/tweet/tweetText'
 import { useMediaOverlay } from '@/context/mediaOverlay'
 import { useSidebarRoot } from '@/context/sidebarRoot'
-import {
-  SidebarContentContext,
-  SidebarContentRefContext,
-  SidebarFlipContext,
-} from '@/context/SidebarTimelineContext'
+import { SidebarContentContext, SidebarContentRefContext, SidebarFlipContext } from '@/context/SidebarTimelineContext'
 import { openTweetInSidebar } from '@/handlers/sidebarController'
 import { Target, TargetOption, useFlip } from '@/hooks/useFlip'
 import type { TweetLimitedAction, TweetResult } from '@/types/response'

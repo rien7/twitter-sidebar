@@ -1,8 +1,4 @@
-import {
-  CONTENT_EVENT_TYPE_POLL_VOTE_REQUEST,
-  EXT_BRIDGE_SOURCE,
-  MESSAGE_DIRECTION_TO_INTERCEPTOR,
-} from '@/common/bridge'
+import { CONTENT_EVENT_TYPE_POLL_VOTE_REQUEST, EXT_BRIDGE_SOURCE, MESSAGE_DIRECTION_TO_INTERCEPTOR } from '@/common/bridge'
 import { createRequestId } from '@/utils/requestId'
 
 interface PollVoteSuccessPayload {

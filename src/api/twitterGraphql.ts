@@ -1,12 +1,5 @@
-import {
-  CONTENT_EVENT_TYPE_ACTION_REQUEST,
-  EXT_BRIDGE_SOURCE,
-  MESSAGE_DIRECTION_TO_INTERCEPTOR,
-} from '@/common/bridge'
-import {
-  TWEET_QUERY_OPERATIONS,
-  type TweetQueryOperationKey,
-} from '@/common/queryId'
+import { CONTENT_EVENT_TYPE_ACTION_REQUEST, EXT_BRIDGE_SOURCE, MESSAGE_DIRECTION_TO_INTERCEPTOR } from '@/common/bridge'
+import { TWEET_QUERY_OPERATIONS, type TweetQueryOperationKey } from '@/common/queryId'
 import type { TweetResultByRestIdResponse } from '@/types/response'
 import { createRequestId } from '@/utils/requestId'
 

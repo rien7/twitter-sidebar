@@ -1,23 +1,7 @@
 import { storeDeletedTweet, storeTweet } from '@/store/tweetsStore'
-import {
-  Entry,
-  ItemContent,
-  TweetResponse,
-  TweetResult,
-  TweetTombstone,
-  TweetWithVisibilityResults,
-} from '@/types/response'
-import {
-  getTweetIdFromTweet,
-  isTweetTombstone,
-  normalizeTweetResult,
-  selectControllerData,
-} from '@/utils/responseData'
-import {
-  extractTimelineInstructions,
-  isTimelineItemContent,
-  isTimelineModuleContent,
-} from '@/utils/timelineData'
+import { Entry, ItemContent, TweetResponse, TweetResult, TweetTombstone, TweetWithVisibilityResults } from '@/types/response'
+import { getTweetIdFromTweet, isTweetTombstone, normalizeTweetResult, selectControllerData } from '@/utils/responseData'
+import { extractTimelineInstructions, isTimelineItemContent, isTimelineModuleContent } from '@/utils/timelineData'
 
 type TimelineContext = {
   lastActualTweetId: string | null

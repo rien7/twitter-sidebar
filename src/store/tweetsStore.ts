@@ -8,11 +8,7 @@ import {
   TweetWithVisibilityResults,
 } from '@/types/response'
 import { TweetData, TweetRelation } from '@/types/tweet'
-import {
-  getTweetIdFromTweet,
-  NormalizedTweetResult,
-  normalizeTweetResult,
-} from '@/utils/responseData'
+import { getTweetIdFromTweet, NormalizedTweetResult, normalizeTweetResult } from '@/utils/responseData'
 
 import { rememberUserAvatarFromTweet } from './avatarStore'
 

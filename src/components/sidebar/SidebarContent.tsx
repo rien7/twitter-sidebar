@@ -1,10 +1,7 @@
 import type { RefObject } from 'react'
 import { useCallback, useMemo, useRef } from 'react'
 
-import {
-  SidebarContentRefContext,
-  SidebarFlipContext,
-} from '@/context/SidebarTimelineContext'
+import { SidebarContentRefContext, SidebarFlipContext } from '@/context/SidebarTimelineContext'
 import { openTweetInSidebar } from '@/handlers/sidebarController'
 import type { TweetResult } from '@/types/response'
 import type { SidebarTweetStatus } from '@/types/sidebar'

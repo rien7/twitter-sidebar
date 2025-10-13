@@ -2,6 +2,7 @@ import js from '@eslint/js'
 import stylistic from '@stylistic/eslint-plugin'
 import { defineConfig, globalIgnores } from 'eslint/config'
 import importPlugin from 'eslint-plugin-import'
+import importNewLine from 'eslint-plugin-import-newlines'
 import reactPlugin from 'eslint-plugin-react'
 import reactHooks from 'eslint-plugin-react-hooks'
 import simpleImportSort from 'eslint-plugin-simple-import-sort'
@@ -20,6 +21,7 @@ export default defineConfig([
       'react': reactPlugin,
       'simple-import-sort': simpleImportSort,
       'import': importPlugin,
+      'import-newlines': importNewLine,
     },
     settings: {
       react: {
@@ -33,12 +35,17 @@ export default defineConfig([
   reactPlugin.configs.flat['jsx-runtime'],
   stylistic.configs.recommended,
   {
-    rules: {
+    rules:
+    {
       'simple-import-sort/imports': 'error',
       'simple-import-sort/exports': 'error',
       'import/first': 'error',
       'import/newline-after-import': 'error',
       'import/no-duplicates': 'error',
+      'import-newlines/enforce': ['error', {
+        'items': 8,
+        'max-len': 130,
+      }],
       'no-console': ['warn', { allow: ['warn', 'error'] }],
       '@stylistic/brace-style': ['error', '1tbs'],
       'react/display-name': 'off',

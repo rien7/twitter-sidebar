@@ -1,7 +1,4 @@
-import {
-  MEDIA_NODE_SELECTOR,
-  TWEET_ARTICLE_SELECTOR,
-} from '@/constants/domSelectors'
+import { MEDIA_NODE_SELECTOR, TWEET_ARTICLE_SELECTOR } from '@/constants/domSelectors'
 import { dispatchOpenMediaOverlay } from '@/events/mediaOverlay'
 import { resolveTweet } from '@/store/tweetsStore'
 import { buildMediaOverlayItemsFromTweet } from '@/utils/responseData'

@@ -1,4 +1,3 @@
-// import { parse } from "twemoji-parser";
 import { decode } from 'he'
 import type { ReactNode } from 'react'
 import { parse } from 'twemoji-parser'

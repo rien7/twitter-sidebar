@@ -1,8 +1,4 @@
-import {
-  CONTENT_EVENT_TYPE_UPLOAD_REQUEST,
-  EXT_BRIDGE_SOURCE,
-  MESSAGE_DIRECTION_TO_INTERCEPTOR,
-} from '@/common/bridge'
+import { CONTENT_EVENT_TYPE_UPLOAD_REQUEST, EXT_BRIDGE_SOURCE, MESSAGE_DIRECTION_TO_INTERCEPTOR } from '@/common/bridge'
 
 export type MediaUploadPhase = 'init' | 'append' | 'finalize' | 'processing'
 

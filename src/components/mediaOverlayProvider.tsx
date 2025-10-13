@@ -1,12 +1,4 @@
-import {
-  PointerEvent as ReactPointerEvent,
-  ReactNode,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react'
+import { PointerEvent as ReactPointerEvent, ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import {
   COLLAPSED_WIDTH_CSS,
@@ -15,15 +7,8 @@ import {
   MediaOverlayContextValue,
   MIN_ZOOM_STEP_FACTOR,
 } from '@/context/mediaOverlay'
-import {
-  MEDIA_OVERLAY_CLOSE_EVENT,
-  MEDIA_OVERLAY_OPEN_EVENT,
-} from '@/events/mediaOverlay'
-import {
-  OverlayCloseIcon,
-  OverlayNextIcon,
-  OverlayPreviousIcon,
-} from '@/icons/MediaOverlayIcons'
+import { MEDIA_OVERLAY_CLOSE_EVENT, MEDIA_OVERLAY_OPEN_EVENT } from '@/events/mediaOverlay'
+import { OverlayCloseIcon, OverlayNextIcon, OverlayPreviousIcon } from '@/icons/MediaOverlayIcons'
 import { MediaOverlayItem, MediaOverlayOpenDetail } from '@/types/mediaOverlay'
 
 export function MediaOverlayProvider({ children }: { children: ReactNode }) {

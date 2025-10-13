@@ -2,11 +2,7 @@ import { handleFollowingListResponse } from '@/api/followingList'
 import { handleFriendshipResponse } from '@/api/friendships'
 import { handleActionResponse } from '@/api/twitterGraphql'
 import { handlePollVoteResponse } from '@/api/twitterPoll'
-import {
-  handleUploadError,
-  handleUploadProgress,
-  handleUploadSuccess,
-} from '@/api/twitterUpload'
+import { handleUploadError, handleUploadProgress, handleUploadSuccess } from '@/api/twitterUpload'
 import {
   EXT_BRIDGE_SOURCE,
   INTERCEPTOR_EVENT_TYPE_ACTION_ERROR,

@@ -1,16 +1,8 @@
 import { INTERCEPTOR_EVENT_TYPE_TIMELINE } from '@/common/bridge'
-import type {
-  CapturedRequest,
-  InterceptorHandler,
-  InterceptorPayload,
-} from '@/types/interceptor'
+import type { CapturedRequest, InterceptorHandler, InterceptorPayload } from '@/types/interceptor'
 import type { TweetResponse } from '@/types/response'
 
-import {
-  sanitizeHeaders,
-  sanitizeRequest,
-  setLatestGraphqlHeaders,
-} from './headerUtils'
+import { sanitizeHeaders, sanitizeRequest, setLatestGraphqlHeaders } from './headerUtils'
 import { postToContent } from './messaging'
 import { updateTweetDetailTemplate } from './tweetDetailTemplate'
 

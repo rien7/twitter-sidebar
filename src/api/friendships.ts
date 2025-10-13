@@ -1,8 +1,4 @@
-import {
-  CONTENT_EVENT_TYPE_FRIENDSHIP_REQUEST,
-  EXT_BRIDGE_SOURCE,
-  MESSAGE_DIRECTION_TO_INTERCEPTOR,
-} from '@/common/bridge'
+import { CONTENT_EVENT_TYPE_FRIENDSHIP_REQUEST, EXT_BRIDGE_SOURCE, MESSAGE_DIRECTION_TO_INTERCEPTOR } from '@/common/bridge'
 
 type FriendshipAction = 'follow' | 'unfollow'
 

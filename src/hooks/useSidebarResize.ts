@@ -1,7 +1,4 @@
-import type {
-  MouseEvent as ReactMouseEvent,
-  PointerEvent as ReactPointerEvent,
-} from 'react'
+import type { MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent } from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { SIDEBAR_WIDTH_MAX, SIDEBAR_WIDTH_MIN } from '@/constants/layout'

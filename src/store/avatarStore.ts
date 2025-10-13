@@ -1,9 +1,5 @@
 import { TweetResult } from '@/types/response'
-import {
-  getAvatarFromUser,
-  getUserFromTweet,
-  getUserIdFromTweet,
-} from '@/utils/responseData'
+import { getAvatarFromUser, getUserFromTweet, getUserIdFromTweet } from '@/utils/responseData'
 
 /**
  * 缓存用户头像等轻量信息，避免在 TweetDetail 异步返回前出现错位头像。

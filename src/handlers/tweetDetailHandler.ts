@@ -1,14 +1,5 @@
-import {
-  CONTENT_EVENT_TYPE_DETAIL_REQUEST,
-  EXT_BRIDGE_SOURCE,
-  MESSAGE_DIRECTION_TO_INTERCEPTOR,
-} from '@/common/bridge'
-import {
-  cacheTweetDetail,
-  clearTweetDetail,
-  getTweet,
-  getTweetDetail,
-} from '@/store/tweetsStore'
+import { CONTENT_EVENT_TYPE_DETAIL_REQUEST, EXT_BRIDGE_SOURCE, MESSAGE_DIRECTION_TO_INTERCEPTOR } from '@/common/bridge'
+import { cacheTweetDetail, clearTweetDetail, getTweet, getTweetDetail } from '@/store/tweetsStore'
 import { TimelineAddEntriesInstruction, TweetResponse } from '@/types/response'
 
 import { handleTimelineUpdate } from './timelineUpdateHandler'
