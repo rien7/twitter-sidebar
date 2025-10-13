@@ -84,7 +84,11 @@ export function SidebarContent({
       <SidebarContentRefContext
         value={{ headerRef, scrollAreaRef, emptyAreaRef }}
       >
-        <div className="bg-twitter-background-surface dark:bg-twitter-dark-background-surface text-twitter-text-primary dark:text-twitter-dark-text-primary shadow-twitter-sidebar flex h-full flex-col border-l border-solid border-twitter-divide-light shadow">
+        <div className={`
+          flex h-full flex-col border-l border-solid border-twitter-divide-light bg-twitter-background-surface
+          text-twitter-text-primary shadow
+        `}
+        >
           <SidebarHeader
             ref={headerRef}
             pinned={pinned}
@@ -93,7 +97,7 @@ export function SidebarContent({
           />
           <div
             ref={scrollAreaRef}
-            className="scrollbar-thin flex-1 overflow-y-auto"
+            className="flex-1 overflow-y-auto"
             style={{ overflowAnchor: 'auto' }}
           >
             <SidebarTimeline

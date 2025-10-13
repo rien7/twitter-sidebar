@@ -9,7 +9,7 @@ interface RenderTwemojiOptions {
 }
 
 const DEFAULT_IMAGE_CLASSNAME = cn(
-  'inline-block h-[1.2em] w-[1.2em] align-[-20%] mx-[0.075em]',
+  'mx-[0.075em] inline-block size-[1.2em] align-[-20%]',
 )
 
 /**

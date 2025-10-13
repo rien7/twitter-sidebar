@@ -294,7 +294,7 @@ function TweetActions({
       className={cn(
         'flex flex-wrap content-start items-center gap-8',
         size === 'md'
-        && 'bg-twitter-background-surface dark:bg-twitter-dark-background-surface border-t border-twitter-divide-light border-solid',
+        && `border-t border-solid border-twitter-divide-light bg-twitter-background-surface`,
         size === 'sm' ? 'mt-3' : 'sticky bottom-0 justify-between p-3',
         className,
       )}
@@ -344,6 +344,7 @@ function TweetActions({
           : undefined
         const iconClassName
           = isLike && action.active
+            // eslint-disable-next-line better-tailwindcss/no-unregistered-classes
             ? cn('active', likeActivatedByUser && 'user-active')
             : undefined
 
@@ -352,12 +353,16 @@ function TweetActions({
             key={action.key}
             type="button"
             className={cn(
-              'group relative flex items-center min-h-5 hover:text-(--accent-rgb) disabled:hover:text-twitter-text-secondary',
+              `
+                group relative flex min-h-5 items-center
+                hover:text-(--accent-rgb)
+                disabled:hover:text-twitter-text-secondary
+              `,
               sizeClasses,
               action.disable && 'opacity-50',
               active
                 ? 'text-(--accent-rgb)'
-                : 'text-twitter-text-secondary dark:text-twitter-dark-text-secondary',
+                : `text-twitter-text-secondary`,
             )}
             onClick={e => handleActionClick(e, action.key)}
             aria-label={action.label}
@@ -375,7 +380,12 @@ function TweetActions({
                 className="relative inline-flex items-center justify-center overflow-visible"
                 style={iconWrapperStyle}
               >
-                <span className="absolute inset-0 bottom-0 left-0 right-0 top-0 -m-2 rounded-full bg-(--accent-rgba) group-disabled:bg-transparent opacity-0 transition-opacity group-hover:opacity-100" />
+                <span className={`
+                  absolute inset-0 -m-2 rounded-full bg-(--accent-rgba) opacity-0 transition-opacity
+                  group-hover:opacity-100
+                  group-disabled:bg-transparent
+                `}
+                />
                 <IconComponent
                   className={iconClassName}
                   size={iconSize}
@@ -385,11 +395,13 @@ function TweetActions({
               {shouldShowCount
                 ? (
                     <span
-                      className={cn(
-                        'px-1 text-[13px] group-hover:text-current min-w-[calc(1em + 24px)]',
-                        active
-                          ? 'text-(--accent-rgb)'
-                          : 'text-twitter-text-secondary dark:text-twitter-dark-text-secondary',
+                      className={cn(`
+                        px-1 text-[13px]
+                        group-hover:text-current
+                      `,
+                      active
+                        ? 'text-(--accent-rgb)'
+                        : `text-twitter-text-secondary`,
                       )}
                     >
                       {formatted}

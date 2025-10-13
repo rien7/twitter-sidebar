@@ -30,7 +30,7 @@ function RemainRing({
       aria-valuemax={1}
       aria-valuenow={clampedProgress}
       className={cn(
-        'transform -rotate-90 transition-[height,width] duration-150',
+        '-rotate-90 transform transition-[height,width] duration-150',
         className,
       )}
       style={{

@@ -162,7 +162,7 @@ function MediaGallery({
     : null
 
   const baseContainerClass = cn(
-    'overflow-hidden border-twitter-border-strong dark:border-twitter-dark-border-strong border',
+    `overflow-hidden border border-twitter-border-strong`,
     containerRadius,
     className,
   )
@@ -225,7 +225,7 @@ function MediaGallery({
           rel="noopener noreferrer"
           aria-label={entry.altText}
           className={cn(
-            'bg-twitter-background-inverse dark:bg-twitter-dark-background-inverse relative block overflow-hidden',
+            `relative block overflow-hidden bg-twitter-background-inverse`,
             extraClassName,
           )}
           style={{ ...resolvedAspectRatio, ...style }}
@@ -254,7 +254,7 @@ function MediaGallery({
       <div
         key={entry.key}
         className={cn(
-          'group relative flex h-full w-full overflow-hidden',
+          'group relative flex size-full overflow-hidden',
           extraClassName,
         )}
         style={{ ...resolvedAspectRatio, ...style }}
@@ -263,7 +263,7 @@ function MediaGallery({
         tabIndex={onSelect ? 0 : undefined}
       >
         <video
-          className="h-full w-full"
+          className="size-full"
           poster={entry.poster}
           controls={!entry.isGif}
           autoPlay={entry.isGif}
@@ -278,7 +278,11 @@ function MediaGallery({
         </video>
         {onSelect
           ? (
-              <div className="pointer-events-none absolute inset-0 bg-black/0 transition group-hover:bg-black/20" />
+              <div className={`
+                pointer-events-none absolute inset-0 bg-black/0 transition
+                group-hover:bg-black/20
+              `}
+              />
             )
           : null}
       </div>
@@ -323,7 +327,7 @@ function MediaGallery({
           className: 'flex-1 min-h-0',
           aspectRatio: '1 / 1',
         })}
-        <div className="flex flex-1 flex-col gap-0.5 min-h-0">
+        <div className="flex min-h-0 flex-1 flex-col gap-0.5">
           {renderMediaItem(mediaEntries[1], {
             className: 'flex-1 min-h-0',
             aspectRatio: '1 / 1',
@@ -343,7 +347,7 @@ function MediaGallery({
         className={cn(baseContainerClass, 'flex flex-col gap-0.5')}
         style={baseContainerStyle}
       >
-        <div className="flex flex-1 gap-0.5 min-h-0">
+        <div className="flex min-h-0 flex-1 gap-0.5">
           {renderMediaItem(mediaEntries[0], {
             className: 'flex-1 min-h-0',
             aspectRatio: '1 / 1',
@@ -353,7 +357,7 @@ function MediaGallery({
             aspectRatio: '1 / 1',
           })}
         </div>
-        <div className="flex flex-1 gap-0.5 min-h-0">
+        <div className="flex min-h-0 flex-1 gap-0.5">
           {renderMediaItem(mediaEntries[2], {
             className: 'flex-1 min-h-0',
             aspectRatio: '1 / 1',

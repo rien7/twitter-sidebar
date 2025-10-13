@@ -1,6 +1,7 @@
 import js from '@eslint/js'
 import stylistic from '@stylistic/eslint-plugin'
 import { defineConfig, globalIgnores } from 'eslint/config'
+import betterTailwind from 'eslint-plugin-better-tailwindcss'
 import importPlugin from 'eslint-plugin-import'
 import importNewLine from 'eslint-plugin-import-newlines'
 import reactPlugin from 'eslint-plugin-react'
@@ -56,6 +57,23 @@ export default defineConfig([
           unnamedComponents: 'arrow-function',
         },
       ],
+    },
+  },
+  {
+    plugins: {
+      'better-tailwindcss': betterTailwind,
+    },
+    settings: {
+      'better-tailwindcss': {
+        entryPoint: 'src/index.css',
+      },
+    },
+    rules: {
+      ...betterTailwind.configs['recommended-error'].rules,
+      'better-tailwindcss/enforce-consistent-line-wrapping': ['error', {
+        printWidth: 130,
+      }],
+      'better-tailwindcss/enforce-shorthand-classes': 'error',
     },
   },
 ])

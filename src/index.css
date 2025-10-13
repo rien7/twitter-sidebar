@@ -14,43 +14,6 @@
   }
 }
 
-@layer components {
-  .scrollbar-thin::-webkit-scrollbar {
-    width: 12px;
-  }
-
-  .scrollbar-thin::-webkit-scrollbar-thumb {
-    background-color: rgba(83, 100, 113, 0.3);
-    border-radius: 9999px;
-  }
-
-  .dark .scrollbar-thin::-webkit-scrollbar-thumb {
-    background-color: rgba(139, 152, 165, 0.3);
-  }
-
-  .scrollbar-thin::-webkit-scrollbar-track {
-    background-color: transparent;
-  }
-}
-
-@layer utilities {
-  .shadow-twitter-card {
-    box-shadow: 0 12px 32px rgba(15, 20, 25, 0.2);
-  }
-
-  .dark .shadow-twitter-card {
-    box-shadow: 0 12px 32px rgba(15, 20, 25, 0.35);
-  }
-
-  .shadow-twitter-sidebar {
-    box-shadow: -20px 0 45px rgba(15, 20, 25, 0.18);
-  }
-
-  .dark .shadow-twitter-sidebar {
-    box-shadow: -20px 0 45px rgba(15, 20, 25, 0.24);
-  }
-}
-
 svg.like-animation {
   #heart {
     transform-origin: 32px 32px;

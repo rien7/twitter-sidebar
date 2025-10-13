@@ -173,7 +173,7 @@ const ReplyComposer = forwardRef<ReplyComposerHandle, ReplyComposerProps>(
 
     return (
       <form
-        className={cn('w-full flex flex-col py-4', className)}
+        className={cn('flex w-full flex-col py-4', className)}
         onSubmit={handleSubmit}
         onClick={(e) => {
           e.stopPropagation()
@@ -251,7 +251,11 @@ const ReplyComposerTextarea = forwardRef<
       onPaste={onPaste}
       onCompositionStart={() => setComposition(true)}
       onCompositionEnd={() => setComposition(false)}
-      className="w-full resize-none bg-twitter-background-surface text-[20px] leading-6 text-twitter-text-primary placeholder:text-twitter-text-secondary focus:outline-none"
+      className={`
+        w-full resize-none bg-twitter-background-surface text-[20px] leading-6 text-twitter-text-primary
+        placeholder:text-twitter-text-secondary
+        focus:outline-none
+      `}
       placeholder="发布你的回复"
       value={value}
       onChange={onChange}
@@ -283,7 +287,10 @@ function ComposerFooter({
     <div className="mt-2 flex items-center justify-between">
       <button
         type="button"
-        className="min-h-[36px] min-w-[36px] cursor-pointer rounded-full bg-transparent fill-twitter-accent transition hover:bg-twitter-accent/10"
+        className={`
+          min-h-[36px] min-w-[36px] cursor-pointer rounded-full bg-transparent fill-twitter-accent transition
+          hover:bg-twitter-accent/10
+        `}
         onClick={onUploadClick}
       >
         <div className="flex items-center justify-center">
@@ -307,7 +314,7 @@ function ComposerFooter({
                 />
                 {color !== undefined
                   ? (
-                      <div className="absolute w-full h-full top-0 left-0 right-0 bottom-0 flex items-center justify-center">
+                      <div className="absolute inset-0 flex size-full items-center justify-center">
                         <div
                           className="min-w-[16px] text-center text-[13px] leading-[8px]"
                           style={{ color: remainCount <= 0 ? '#f4212e' : undefined }}
@@ -322,7 +329,11 @@ function ComposerFooter({
           : undefined}
         <button
           type="submit"
-          className="rounded-full bg-twitter-background-inverse px-5 py-2 text-[15px] font-semibold text-twitter-text-inverse transition-opacity disabled:opacity-50"
+          className={`
+            rounded-full bg-twitter-background-inverse px-5 py-2 text-[15px] font-semibold text-twitter-text-inverse
+            transition-opacity
+            disabled:opacity-50
+          `}
           disabled={disableSubmit}
           aria-busy={isSubmitting}
         >

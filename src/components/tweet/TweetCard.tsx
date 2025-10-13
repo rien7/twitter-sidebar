@@ -126,7 +126,7 @@ function TweetCard({
   const showTimestampInHeader = !isMain && Boolean(createdAt)
   const quotedTweetNode = quotedTweet
     ? (
-        <div className="border-twitter-border-light dark:border-twitter-dark-border-light bg-twitter-background-surface dark:bg-twitter-dark-background-surface rounded-2xl border border-solid p-3">
+        <div className="rounded-2xl border border-solid border-twitter-border-light bg-twitter-background-surface p-3">
           <TweetCard
             tweet={quotedTweet}
             variant="quote"
@@ -272,20 +272,24 @@ function TweetCard({
   }
 
   const articleClass = cn(
-    'flex gap-3 items-start flex-col',
-    isMain && 'px-5 pt-4 relative',
+    'flex flex-col items-start gap-3',
+    isMain && 'relative px-5 pt-4',
     isReply
-    && 'px-5 py-4 relative bg-twitter-background-surface dark:bg-twitter-dark-background-surface',
-    isQuote && 'rounded-2xl cursor-pointer',
+    && `relative bg-twitter-background-surface px-5 py-4`,
+    isQuote && 'cursor-pointer rounded-2xl',
     isReply
     && showDivider
-    && `after:content-[''] after:absolute ${
-      linkBottom ? 'after:left-16' : 'after:left-0'
-    } after:right-0 after:bottom-0 after:h-px after:bg-twitter-border-light`,
+    && `
+      after:absolute after:content-['']
+      ${
+        linkBottom ? 'after:left-16' : 'after:left-0'
+      }
+      after:right-0 after:bottom-0 after:h-px after:bg-twitter-border-light
+    `,
     isReply
     && linkBottom
     && composerOpen
-    && 'after:content-[\'\'] after:absolute after:left-16 after:right-0 after:bottom-0 after:h-px after:bg-twitter-border-light',
+    && 'after:absolute after:right-0 after:bottom-0 after:left-16 after:h-px after:bg-twitter-border-light after:content-[\'\']',
   )
 
   const articleProps: {
@@ -326,7 +330,7 @@ function TweetCard({
           ? (
               <span
                 aria-hidden
-                className="bg-twitter-text-divider dark:bg-twitter-dark-text-divider pointer-events-none absolute left-[2.625rem] top-0 h-3 w-0.5"
+                className="pointer-events-none absolute top-0 left-[2.625rem] h-3 w-0.5 bg-twitter-text-divider"
               />
             )
           : null}
@@ -334,7 +338,7 @@ function TweetCard({
           ? (
               <span
                 aria-hidden
-                className="bg-twitter-text-divider dark:bg-twitter-dark-text-divider pointer-events-none absolute bottom-0 left-[2.625rem] top-16 w-0.5"
+                className="pointer-events-none absolute top-16 bottom-0 left-[2.625rem] w-0.5 bg-twitter-text-divider"
               />
             )
           : null}

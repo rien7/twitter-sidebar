@@ -63,6 +63,7 @@ export function LikeAnimationIcon({
       viewBox="0 0 64 64"
       width={size}
       height={size}
+      // eslint-disable-next-line better-tailwindcss/no-unregistered-classes
       className={cn('like-animation', className)}
       {...rest}
     >

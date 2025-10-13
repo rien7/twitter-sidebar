@@ -343,7 +343,10 @@ export const buildRichTextNodes = (tweet: TweetResult): RichTextNode[] => {
             href={entity.href}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-twitter-accent hover:underline"
+            className={`
+              text-twitter-accent
+              hover:underline
+            `}
           >
             {renderWithTwemoji(content)}
           </a>

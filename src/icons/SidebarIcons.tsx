@@ -25,7 +25,10 @@ export function SidebarCloseIcon({ size = 18, ...props }: IconProps) {
         height="14"
         rx="2"
         fill="currentColor"
-        className="stroke-none transition-all duration-300 group-hover:w-[24%]"
+        className={`
+          stroke-none transition-all duration-300
+          group-hover:w-[24%]
+        `}
       />
     </svg>
   )

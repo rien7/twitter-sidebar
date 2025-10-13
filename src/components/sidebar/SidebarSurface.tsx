@@ -104,6 +104,7 @@ export function SidebarSurface() {
           ref={rootRef}
           className={cn(
             'pointer-events-none fixed inset-0 z-[2147483645]',
+            // eslint-disable-next-line better-tailwindcss/no-unregistered-classes
             isDark && 'dark',
           )}
           style={
@@ -149,10 +150,13 @@ export function SidebarSurface() {
                     aria-label="调整侧边栏宽度"
                     tabIndex={0}
                     className={cn(
-                      'absolute left-0 -translate-x-1/2 top-0 z-50 h-full w-1 select-none transition-colors',
+                      `absolute top-0 left-0 z-50 h-full w-1 -translate-x-1/2 transition-colors select-none`,
                       isResizing
                         ? 'bg-twitter-accent'
-                        : 'bg-transparent hover:bg-twitter-accent',
+                        : `
+                          bg-transparent
+                          hover:bg-twitter-accent
+                        `,
                     )}
                     onPointerDown={handlePointerDown}
                     onPointerOver={() => handlePointerOver(width)}

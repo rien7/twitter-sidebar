@@ -78,7 +78,10 @@ const buildDescriptionNodes = (user?: UserResult | null) => {
           href={entity.href}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-twitter-accent hover:underline"
+          className={`
+            text-twitter-accent
+            hover:underline
+          `}
         >
           {display}
         </a>
@@ -245,18 +248,21 @@ function UserHoverCard({
         ? (
             <div
               className={cn(
-                'border-twitter-border-light dark:border-twitter-dark-border-light bg-twitter-background-surface dark:bg-twitter-dark-background-surface shadow-twitter-card absolute top-full z-50 mt-2 w-[360px] max-w-[90vw] rounded-2xl border p-4',
+                `
+                  absolute top-full z-50 mt-2 w-[360px] max-w-[90vw] rounded-2xl border border-twitter-border-light
+                  bg-twitter-background-surface p-4
+                `,
                 alignmentClass,
               )}
             >
               <div className="flex items-start gap-3">
-                <div className="h-16 w-16 overflow-hidden rounded-full">
+                <div className="size-16 overflow-hidden rounded-full">
                   {avatar
                     ? (
                         <img
                           src={avatar}
                           alt={`${name} 的头像`}
-                          className="h-full w-full object-cover"
+                          className="size-full object-cover"
                         />
                       )
                     : null}
@@ -270,37 +276,51 @@ function UserHoverCard({
                   onFocus={handleMouseEnterButton}
                   onBlur={handleMouseLeaveButton}
                   className={cn(
-                    'ml-auto rounded-full px-4 py-1 text-[15px] hover:cursor-pointer leading-[20px] min-h-[36px] border border-solid font-semibold focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60 transition-colors',
+                    `
+                      ml-auto min-h-[36px] rounded-full border border-solid px-4 py-1 text-[15px] leading-[20px] font-semibold
+                      transition-colors
+                      hover:cursor-pointer
+                      focus-visible:outline-none
+                      disabled:cursor-not-allowed disabled:opacity-60
+                    `,
                     (!isFollowing
                       || (isFollowing && isHoveringButton && fromUnfollow))
-                    && 'bg-twitter-background-inverse border-twitter-background-inverse text-twitter-text-inverse',
+                    && 'border-twitter-background-inverse bg-twitter-background-inverse text-twitter-text-inverse',
                     isFollowing
                     && isHoveringButton
                     && !fromUnfollow
-                    && 'bg-red-50 dark:bg-transparent border-red-500 text-red-500',
+                    && `
+                      border-red-500 bg-red-50 text-red-500
+                      dark:bg-transparent
+                    `,
                     isFollowing
                     && !isHoveringButton
                     && !fromUnfollow
-                    && 'border-twitter-border-strong text-twitter-text-primary bg-transparent',
+                    && 'border-twitter-border-strong bg-transparent text-twitter-text-primary',
                   )}
                 >
                   {followLabel}
                 </button>
               </div>
               <div className="mt-3 flex flex-col gap-1">
-                <div className="text-twitter-text-primary dark:text-twitter-dark-text-primary text-[17px] font-bold">
+                <div className="text-[17px] font-bold text-twitter-text-primary">
                   {renderWithTwemoji(name)}
                 </div>
                 {screenName
                   ? (
                       <div className="flex items-center">
-                        <div className="text-twitter-text-secondary dark:text-twitter-dark-text-secondary text-[15px]">
+                        <div className="text-[15px] text-twitter-text-secondary">
                           @
                           {screenName}
                         </div>
                         {followby
                           ? (
-                              <div className="dark:bg-[#202327] bg-[#eff3f4] text-[#536471] dark:text-[#71767b] font-medium leading-[12px] text-[11px] ml-[4px] px-[4px] py-[2px] rounded-[4px]">
+                              <div className={`
+                                ml-[4px] rounded-[4px] bg-[#eff3f4] px-[4px] py-[2px] text-[11px] leading-[12px] font-medium
+                                text-[#536471]
+                                dark:bg-[#202327] dark:text-[#71767b]
+                              `}
+                              >
                                 Follows you
                               </div>
                             )
@@ -310,7 +330,7 @@ function UserHoverCard({
                   : null}
                 {descriptionNodes.length > 0
                   ? (
-                      <div className="text-twitter-text-primary dark:text-twitter-dark-text-primary whitespace-pre-wrap break-words text-[15px] leading-6">
+                      <div className="text-[15px] leading-6 break-words whitespace-pre-wrap text-twitter-text-primary">
                         {descriptionNodes.map(({ key, node }) => (
                           <span key={key} className="[&>a]:font-normal">
                             {node}
@@ -332,9 +352,12 @@ function UserHoverCard({
                           }
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-twitter-text-secondary dark:text-twitter-dark-text-secondary hover:underline"
+                          className={`
+                            text-twitter-text-secondary
+                            hover:underline
+                          `}
                         >
-                          <span className="text-twitter-text-primary dark:text-twitter-dark-text-primary font-semibold">
+                          <span className="font-semibold text-twitter-text-primary">
                             {following}
                           </span>
                           {' '}
@@ -352,9 +375,12 @@ function UserHoverCard({
                           }
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-twitter-text-secondary dark:text-twitter-dark-text-secondary hover:underline"
+                          className={`
+                            text-twitter-text-secondary
+                            hover:underline
+                          `}
                         >
-                          <span className="text-twitter-text-primary dark:text-twitter-dark-text-primary font-semibold">
+                          <span className="font-semibold text-twitter-text-primary">
                             {followers}
                           </span>
                           {' '}
@@ -372,7 +398,7 @@ function UserHoverCard({
                       className="mt-3 flex"
                       href={`https://x.com/${screenName}/followers_you_follow`}
                     >
-                      <div className="h-full flex shrink-0">
+                      <div className="flex h-full shrink-0">
                         {followingPreview.slice(0, 3).map((entry, index) => {
                           const previewAvatar = entry.avatarUrl ?? undefined
                           return (
@@ -381,7 +407,7 @@ function UserHoverCard({
                               src={previewAvatar}
                               alt={`${entry.name || entry.screenName} 的头像`}
                               className={cn(
-                                'h-7 w-7 rounded-full object-cover border-white border border-solid top-0 bottom-0',
+                                'top-0 bottom-0 size-7 rounded-full border border-solid border-white object-cover',
                                 index > 0 && '-ml-3.5',
                               )}
                               style={{
@@ -391,7 +417,7 @@ function UserHoverCard({
                           )
                         })}
                       </div>
-                      <div className="grow ml-1 text-twitter-text-secondary text-sm">
+                      <div className="ml-1 grow text-sm text-twitter-text-secondary">
                         Following by
                         {' '}
                         {followingPreview.slice(0, 2).map((f, i) => {

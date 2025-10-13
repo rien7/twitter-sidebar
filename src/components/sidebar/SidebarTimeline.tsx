@@ -214,7 +214,7 @@ export function SidebarTimeline({
 
   if (!tweet) {
     return (
-      <div className="text-twitter-text-secondary dark:text-twitter-dark-text-secondary px-5 py-10 text-center text-[15px]">
+      <div className="px-5 py-10 text-center text-[15px] text-twitter-text-secondary">
         选择一条推文即可在此预览详细内容
       </div>
     )

@@ -65,7 +65,7 @@ export function TweetCardContent({
 }: TweetCardContentProps) {
   const transitionClass = ''
   const bodyTextClass = cn(
-    'text-twitter-text-primary dark:text-twitter-dark-text-primary whitespace-pre-wrap break-words',
+    `break-words whitespace-pre-wrap text-twitter-text-primary`,
     transitionClass,
     isMain ? 'text-[17px]' : 'text-[15px]',
     isMain && 'mt-3',
@@ -145,7 +145,7 @@ export function TweetCardContent({
       )}
       {isMain
         ? (
-            <div className="text-twitter-text-secondary dark:text-twitter-dark-text-secondary my-4 flex flex-wrap items-center gap-1 text-[15px]">
+            <div className="my-4 flex flex-wrap items-center gap-1 text-[15px] text-twitter-text-secondary">
               {createdAt ? <span>{createdAt}</span> : null}
               {viewsText ? <span>·</span> : null}
               {viewsText ? <span>{viewsText}</span> : null}
@@ -169,8 +169,8 @@ export function TweetCardContent({
               ref={composerRef}
               tweet={tweet}
               className={cn(
-                isReply && 'pl-[3.25rem] py-0',
-                isMain && 'border-twitter-divide-light border-t',
+                isReply && 'py-0 pl-[3.25rem]',
+                isMain && 'border-t border-twitter-divide-light',
               )}
               expanded={composerOpen}
               onExpand={onComposerExpand}

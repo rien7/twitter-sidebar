@@ -22,16 +22,19 @@ function CardPreview({ card }: { card: TweetCardInfo }) {
       href={card.url}
       target="_blank"
       rel="noopener noreferrer"
-      className={cn(
-        'border-twitter-border-light dark:border-twitter-dark-border-light bg-twitter-background-surface dark:bg-twitter-dark-background-surface hover:bg-twitter-background-hover dark:hover:bg-twitter-dark-background-hover mt-3 flex overflow-hidden rounded-2xl border transition-colors duration-200',
-        layoutClass,
+      className={cn(`
+        mt-3 flex overflow-hidden rounded-2xl border border-twitter-border-light bg-twitter-background-surface transition-colors
+        duration-200
+        hover:bg-twitter-background-hover
+      `,
+      layoutClass,
       )}
     >
       {hasImage
         ? (
             <div
               className={cn(
-                'bg-twitter-background-card dark:bg-twitter-dark-background-card overflow-hidden',
+                `overflow-hidden bg-twitter-background-card`,
                 imageWrapperClass,
               )}
               style={{
@@ -45,7 +48,7 @@ function CardPreview({ card }: { card: TweetCardInfo }) {
               <img
                 src={card.image?.url}
                 alt={imageAlt}
-                className="h-full w-full object-cover"
+                className="size-full object-cover"
                 loading="lazy"
               />
             </div>
@@ -54,21 +57,21 @@ function CardPreview({ card }: { card: TweetCardInfo }) {
       <div className="flex min-w-0 flex-1 flex-col gap-1 p-3">
         {card.displayUrl
           ? (
-              <span className="text-twitter-text-secondary dark:text-twitter-dark-text-secondary text-[13px] font-medium uppercase">
+              <span className="text-[13px] font-medium text-twitter-text-secondary uppercase">
                 {card.displayUrl}
               </span>
             )
           : null}
         {card.title
           ? (
-              <span className="text-twitter-text-primary dark:text-twitter-dark-text-primary text-[15px] font-semibold">
+              <span className="text-[15px] font-semibold text-twitter-text-primary">
                 {card.title}
               </span>
             )
           : null}
         {card.description
           ? (
-              <span className="text-twitter-text-secondary dark:text-twitter-dark-text-secondary text-[15px] leading-5">
+              <span className="text-[15px] leading-5 text-twitter-text-secondary">
                 {card.description}
               </span>
             )

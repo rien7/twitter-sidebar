@@ -417,18 +417,25 @@ export function MediaOverlayProvider({ children }: { children: ReactNode }) {
       {activeMedia
         ? (
             <div
-              className="pointer-events-auto fixed inset-y-0 left-0 z-[2147483644] flex justify-center bg-black/60 backdrop-blur-sm transition-opacity"
+              className={`
+                pointer-events-auto fixed inset-y-0 left-0 z-[2147483644] flex justify-center bg-black/60 backdrop-blur-sm
+                transition-opacity
+              `}
               style={{ right: COLLAPSED_WIDTH_CSS }}
               onClick={(event) => {
                 event.stopPropagation()
                 closeMedia()
               }}
             >
-              <div className="relative flex h-full w-full justify-center px-6 py-8">
+              <div className="relative flex size-full justify-center px-6 py-8">
                 <button
                   type="button"
                   aria-label="关闭预览"
-                  className="absolute right-6 top-6 z-20 rounded-full border border-white/30 bg-black/50 p-2 text-white shadow-lg transition hover:bg-black/70"
+                  className={`
+                    absolute top-6 right-6 z-20 rounded-full border border-white/30 bg-black/50 p-2 text-white shadow-lg
+                    transition
+                    hover:bg-black/70
+                  `}
                   onClick={(event) => {
                     event.stopPropagation()
                     closeMedia()
@@ -442,7 +449,11 @@ export function MediaOverlayProvider({ children }: { children: ReactNode }) {
                         <button
                           type="button"
                           aria-label="上一张"
-                          className="absolute left-4 top-1/2 z-20 -translate-y-1/2 rounded-full bg-black/50 p-3 text-white shadow-lg transition hover:bg-black/70"
+                          className={`
+                            absolute top-1/2 left-4 z-20 -translate-y-1/2 rounded-full bg-black/50 p-3 text-white shadow-lg
+                            transition
+                            hover:bg-black/70
+                          `}
                           onClick={(event) => {
                             event.stopPropagation()
                             showPrevious()
@@ -453,7 +464,11 @@ export function MediaOverlayProvider({ children }: { children: ReactNode }) {
                         <button
                           type="button"
                           aria-label="下一张"
-                          className="absolute right-4 top-1/2 z-20 -translate-y-1/2 rounded-full bg-black/50 p-3 text-white shadow-lg transition hover:bg-black/70"
+                          className={`
+                            absolute top-1/2 right-4 z-20 -translate-y-1/2 rounded-full bg-black/50 p-3 text-white shadow-lg
+                            transition
+                            hover:bg-black/70
+                          `}
                           onClick={(event) => {
                             event.stopPropagation()
                             showNext()
@@ -467,7 +482,7 @@ export function MediaOverlayProvider({ children }: { children: ReactNode }) {
                 <div className="relative flex max-h-full flex-1 items-center justify-center">
                   <div
                     ref={containerRef}
-                    className="pointer-events-none relative flex h-full w-full items-center justify-center"
+                    className="pointer-events-none relative flex size-full items-center justify-center"
                     style={{ overflow: canPan ? 'visible' : 'hidden' }}
                   >
                     {activeMedia?.kind === 'photo' && resolvedSrc

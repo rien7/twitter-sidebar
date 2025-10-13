@@ -44,23 +44,23 @@ export function TweetCardHeader({
   userHandleRef,
 }: TweetCardHeaderProps) {
   const avatarClass = cn(
-    'overflow-hidden rounded-full flex-shrink-0',
-    isMain ? 'h-12 w-12' : isQuote ? 'h-6 w-6' : 'h-11 w-11',
+    'flex-shrink-0 overflow-hidden rounded-full',
+    isMain ? 'size-12' : isQuote ? 'size-6' : 'size-11',
     isQuote && 'z-10',
   )
   const headerClass = cn(
-    'flex ml-2 flex-nowrap min-w-0',
+    'ml-2 flex min-w-0 flex-nowrap',
     isReply && 'items-start',
-    isQuote && 'items-center gap-1 w-full flex-1',
+    isQuote && 'w-full flex-1 items-center gap-1',
     isMain && 'flex-col items-start gap-0',
   )
   const nameClass = cn(
-    'text-twitter-text-primary dark:text-twitter-dark-text-primary grow-0 min-w-0 overflow-hidden overflow-ellipsis text-nowrap flex-shrink-2',
+    `min-w-0 flex-shrink-2 grow-0 overflow-hidden text-nowrap overflow-ellipsis text-twitter-text-primary`,
     isMain ? 'text-[17px] font-bold' : 'text-[15px] font-semibold',
     isQuote && 'z-10',
   )
   const handleClass = cn(
-    'text-twitter-text-secondary dark:text-twitter-dark-text-secondary text-[15px] flex-shrink-1',
+    `flex-shrink-1 text-[15px] text-twitter-text-secondary`,
     (isReply || isQuote) && 'ml-1',
     isQuote && 'z-10',
   )
@@ -89,7 +89,7 @@ export function TweetCardHeader({
                     ref={avatarRef}
                     src={avatarCache ?? undefined}
                     alt={`${name} 的头像`}
-                    className="h-full w-full object-cover"
+                    className="size-full object-cover"
                   />
                 )
               : null}
@@ -99,10 +99,10 @@ export function TweetCardHeader({
           <UserHoverCard
             user={user}
             ref={userNameRef}
-            className={cn('items-center min-w-0', isQuote && 'z-10')}
+            className={cn('min-w-0 items-center', isQuote && 'z-10')}
           >
             <span className={nameClass}>{renderWithTwemoji(name)}</span>
-            <span className="inline-flex ml-0.5 items-center justify-center h-5 gap-0.5 shrink-0">
+            <span className="ml-0.5 inline-flex h-5 shrink-0 items-center justify-center gap-0.5">
               {isProtected
                 ? (
                     <ProtectedIcon className="fill-twitter-text-primary" />
@@ -123,7 +123,7 @@ export function TweetCardHeader({
           </UserHoverCard>
           {showTimestampInHeader
             ? (
-                <span className="text-twitter-text-secondary dark:text-twitter-dark-text-secondary ml-1 shrink-0">
+                <span className="ml-1 shrink-0 text-twitter-text-secondary">
                   <span className="mr-1">·</span>
                   <span>{createdAt}</span>
                 </span>
@@ -134,7 +134,10 @@ export function TweetCardHeader({
       {isMain
         ? (
             <button
-              className="dark:hover:bg-twitter-dark-background-hover hover:bg-twitter-background-hover inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-md bg-transparent p-2 transition"
+              className={`
+                inline-flex size-9 cursor-pointer items-center justify-center rounded-md bg-transparent p-2 transition
+                hover:bg-twitter-background-hover
+              `}
               onClick={onOpenInNewTab}
             >
               <ExternalLinkIcon />

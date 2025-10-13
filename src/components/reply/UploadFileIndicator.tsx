@@ -32,9 +32,12 @@ export function UploadFileIndicator({
       {items.map(item => (
         <div
           key={item.id}
-          className="rounded-[8px] px-[16px] py-[12px] bg-twitter-accent/10 dark:bg-twitter-accent/20 relative overflow-hidden"
+          className={`
+            relative overflow-hidden rounded-[8px] bg-twitter-accent/10 px-[16px] py-[12px]
+            dark:bg-twitter-accent/20
+          `}
         >
-          <div className="flex items-center justify-between text-twitter-text-primary font-bold">
+          <div className="flex items-center justify-between font-bold text-twitter-text-primary">
             <span className="truncate">{item.name}</span>
             <span className={cn('ml-3 shrink-0', statusClassName[item.status])}>
               {statusLabel[item.status]}
@@ -43,7 +46,10 @@ export function UploadFileIndicator({
           {/* css mask */}
           <div
             className={cn(
-              'h-full w-full z-10 absolute top-0 bottom-0 left-0 right-0 px-[16px] py-[12px] flex items-center justify-between text-twitter-text-inverse font-bold bg-twitter-accent transition-opacity',
+              `
+                absolute inset-0 z-10 flex size-full items-center justify-between bg-twitter-accent px-[16px] py-[12px] font-bold
+                text-twitter-text-inverse transition-opacity
+              `,
               item.status !== 'Uploaded' ? 'opacity-100' : 'opacity-0',
             )}
             style={{

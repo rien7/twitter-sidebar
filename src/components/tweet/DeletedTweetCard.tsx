@@ -79,7 +79,10 @@ const renderSegments = (segments: TextSegment[]): ReactNode => {
           href={segment.url}
           target="_blank"
           rel="noreferrer"
-          className="text-twitter-accent hover:underline"
+          className={`
+            text-twitter-accent
+            hover:underline
+          `}
         >
           {segment.value}
         </a>
@@ -106,11 +109,11 @@ export function DeletedTweetCard({
   )
 
   const articleClass = cn(
-    'relative px-5 py-4 bg-twitter-background-surface',
+    'relative bg-twitter-background-surface px-5 py-4',
     showDivider
     && variant === 'reply'
     && !linkBottom
-    && 'after:content-[\'\'] after:absolute after:left-16 after:right-0 after:bottom-0 after:h-px after:bg-twitter-border-light',
+    && 'after:absolute after:right-0 after:bottom-0 after:left-16 after:h-px after:bg-twitter-border-light after:content-[\'\']',
   )
 
   return (
@@ -119,7 +122,7 @@ export function DeletedTweetCard({
         ? (
             <span
               aria-hidden
-              className="bg-twitter-text-divider pointer-events-none absolute left-[2.625rem] top-0 h-3 w-0.5"
+              className="pointer-events-none absolute top-0 left-[2.625rem] h-3 w-0.5 bg-twitter-text-divider"
             />
           )
         : null}
@@ -127,7 +130,7 @@ export function DeletedTweetCard({
         ? (
             <span
               aria-hidden
-              className="bg-twitter-text-divider pointer-events-none absolute bottom-0 left-[2.625rem] top-[67px] w-0.5"
+              className="pointer-events-none absolute top-[67px] bottom-0 left-[2.625rem] w-0.5 bg-twitter-text-divider"
             />
           )
         : null}

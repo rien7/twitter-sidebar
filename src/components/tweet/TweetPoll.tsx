@@ -95,9 +95,15 @@ function PollOption({
     <button
       type="button"
       className={cn(
-        'relative overflow-hidden border border-solid border-transparent min-h-[32px] min-w-[32px] px-[1em] flex-grow bg-transparent transition-[background-color]',
+        `
+          relative min-h-[32px] min-w-[32px] flex-grow overflow-hidden border border-solid border-transparent bg-transparent
+          px-[1em] transition-[background-color]
+        `,
         canVote
-        && 'border-twitter-accent hover:bg-twitter-accent/10 cursor-pointer rounded-full',
+        && `
+          cursor-pointer rounded-full border-twitter-accent
+          hover:bg-twitter-accent/10
+        `,
       )}
       disabled={!canVote}
       onClick={() => onVote(choice.id)}
@@ -107,7 +113,7 @@ function PollOption({
             <span
               aria-hidden
               className={cn(
-                'pointer-events-none absolute left-0 top-0 bottom-0 rounded-[4px] cursor-default',
+                'pointer-events-none absolute top-0 bottom-0 left-0 cursor-default rounded-[4px]',
                 !canVote && isWinner
                   ? 'bg-twitter-accent/55'
                   : 'bg-twitter-vote-background',
@@ -118,9 +124,9 @@ function PollOption({
         : null}
       <span
         className={cn(
-          'relative flex items-center text-[15px] w-full leading-[20px]',
+          'relative flex w-full items-center text-[15px] leading-[20px]',
           canVote
-            ? 'justify-center font-bold text-twitter-accent truncate'
+            ? 'justify-center truncate font-bold text-twitter-accent'
             : 'justify-between',
           isWinner && 'font-bold',
         )}
@@ -237,7 +243,7 @@ export function TweetPoll({ tweetId, poll, className }: TweetPollProps) {
           )
         })}
       </div>
-      <div className="text-twitter-text-secondary dark:text-twitter-dark-text-secondary text-[13px]">
+      <div className="text-[13px] text-twitter-text-secondary">
         {statusText}
       </div>
     </div>
