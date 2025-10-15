@@ -205,7 +205,7 @@ export default function TweetCard({
         )}
         <div className={cn('w-full', isMain && 'border-b border-twitter-divide-light')}>
           <TweetCardHeader
-            key={tweet.rest_id}
+            key={`${tweet.rest_id}-header`}
             tweet={tweet}
             userAvatarRef={userAvatarRef}
             userHandleRef={userHandleRef}
@@ -217,7 +217,7 @@ export default function TweetCard({
             cardRef={cardRef}
             composerOpen={composerOpen}
             controllerData={controllerData}
-            key={tweet.rest_id}
+            key={`${tweet.rest_id}-content`}
             limitedActions={limitedActions}
             onSelect={onSelect}
             setComposerOpen={setComposerOpen}

@@ -31,11 +31,11 @@ interface SidebarFlipContextValue {
 
 export const SidebarFlipContext = createContext<SidebarFlipContextValue>(null!)
 export const useSidebarFlip = () => use(SidebarFlipContext)
-export function SidebarFlipProvider({ mainArticleTopRef, children }: {
+export function SidebarFlipProvider({ mainArticleRef, mainArticleTopRef, children }: {
+  mainArticleRef: RefObject<HTMLElement | null>
   mainArticleTopRef: RefObject<number | null>
   children: React.ReactNode | React.ReactNode[]
 }) {
-  const mainArticleRef = useRef<HTMLElement | null>(null)
   const registerMainArticleRef = (ref: RefObject<HTMLElement | null>) => {
     mainArticleRef.current = ref.current
   }

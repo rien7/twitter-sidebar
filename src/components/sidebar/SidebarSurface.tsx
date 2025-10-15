@@ -22,7 +22,7 @@ export function SidebarSurface() {
   const mainArticleTopRef = useRef<number | null>(null)
 
   const { isDark, background, accent } = useColorScheme()
-  const { isOpen, pinned, width, tweet, tweetRelation } = useSidebarStore()
+  const { isOpen, pinned, width, tweet, tweetRelation, relateTweets } = useSidebarStore()
 
   const mediaOverlay = useMediaOverlay()
   const closeMedia = mediaOverlay?.closeMedia
@@ -37,13 +37,14 @@ export function SidebarSurface() {
   const timelineVersion = useMemo(() => {
     return simpleHash([
       tweet?.result.rest_id,
+      Object.values(relateTweets ?? {}).length.toString(),
       tweetRelation?.quote,
       tweetRelation?.quoteBy,
       ...([...tweetRelation?.replies ?? []].toSorted()),
       tweetRelation?.replyTo,
       tweetRelation?.retweet,
       ...([...tweetRelation?.retweetBy ?? []].sort())])
-  }, [tweet, tweetRelation])
+  }, [tweet, tweetRelation, relateTweets])
   const previousMainTweetIdRef = useRef<string | undefined>(undefined)
 
   if (mainArticleRef.current && scrollAreaRef.current) {
@@ -89,7 +90,7 @@ export function SidebarSurface() {
 
   return (
     <SidebarRootContext value={rootRef}>
-      <SidebarFlipProvider mainArticleTopRef={mainArticleTopRef}>
+      <SidebarFlipProvider mainArticleRef={mainArticleRef} mainArticleTopRef={mainArticleTopRef}>
         <SidebarTweetContext value={{ mainTweetId, conversationId, timelineVersion }}>
           <div
             className={cn(
