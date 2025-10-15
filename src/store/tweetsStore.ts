@@ -1,28 +1,15 @@
-import {
-  Instruction,
-  TimelineModuleContent,
-  TweetLimitedAction,
-  TweetResponse,
-  TweetResult,
-  TweetTombstone,
-  TweetWithVisibilityResults,
-} from '@/types/response'
+import { TweetLimitedAction, TweetResponse, TweetResult, TweetTombstone } from '@/types/response'
 import { TweetData, TweetRelation } from '@/types/tweet'
-import { getTweetIdFromTweet, NormalizedTweetResult, normalizeTweetResult } from '@/utils/responseData'
+import { NormalizedTweetResult, normalizeTweetResult } from '@/utils/responseData'
 
 import { rememberUserAvatarFromTweet } from './avatarStore'
 
-const tweetsStore = new Map<string, TweetData>()
-const tweetsRelationStore = new Map<string, TweetRelation>()
-
 const TWEET_DETAIL_TTL_MS = 60_000
 
-type CachedTweetDetail = {
+interface CachedTweetDetail {
   detail: TweetResponse
   cachedAt: number
 }
-
-const tweetDetailCache = new Map<string, CachedTweetDetail>()
 
 export interface DeletedTweetData {
   tweetId: string
@@ -31,6 +18,9 @@ export interface DeletedTweetData {
   recordedAt: number
 }
 
+const tweetsStore = new Map<string, TweetData>()
+const tweetsRelationStore = new Map<string, TweetRelation>()
+const tweetDetailCache = new Map<string, CachedTweetDetail>()
 const deletedTweetStore = new Map<string, DeletedTweetData>()
 
 export function storeTweet(
@@ -39,15 +29,12 @@ export function storeTweet(
   refreshRelation: boolean = false,
   limitedActions?: TweetLimitedAction[] | null,
 ) {
-  const tweetId = getTweetIdFromTweet(tweet)
-  if (!tweetId) return
+  const tweetId = tweet.rest_id
   const previous = tweetsStore.get(tweetId)
-  const resolvedControllerData
-    = controllerData ?? previous?.controllerData ?? null
-  const resolvedLimitedActions
-    = limitedActions === undefined
-      ? previous?.limitedActions ?? null
-      : limitedActions ?? null
+  const resolvedControllerData = controllerData ?? previous?.controllerData ?? null
+  const resolvedLimitedActions = limitedActions === undefined
+    ? previous?.limitedActions ?? null
+    : limitedActions ?? null
   tweetsStore.set(tweetId, {
     result: tweet,
     controllerData: resolvedControllerData,
@@ -70,20 +57,8 @@ export function resolveTweet(tweetId: string): TweetData | null {
   if (cached) return cached
 
   for (const candidate of tweetsStore.values()) {
-    const directRetweeted = normalizeTweetResult(
-      candidate.result.retweeted_status_result?.result,
-    )
-    const legacyRetweeted = normalizeTweetResult(
-      (
-        candidate.result.legacy as
-        | {
-          retweeted_status_result?: {
-            result?: TweetResult | TweetWithVisibilityResults
-          }
-        }
-        | undefined
-      )?.retweeted_status_result?.result,
-    )
+    const directRetweeted = normalizeTweetResult(candidate.result.retweeted_status_result?.result)
+    const legacyRetweeted = normalizeTweetResult(candidate.result.legacy?.retweeted_status_result?.result)
     const retweetedNormalized = directRetweeted ?? legacyRetweeted
 
     if (!retweetedNormalized) {
@@ -91,8 +66,8 @@ export function resolveTweet(tweetId: string): TweetData | null {
     }
 
     const retweeted = retweetedNormalized.tweet
-    const retweetedId = getTweetIdFromTweet(retweeted)
-    if (!retweetedId || retweetedId !== tweetId) {
+    const retweetedId = retweeted.rest_id
+    if (retweetedId !== tweetId) {
       continue
     }
 
@@ -130,110 +105,6 @@ export function clearTweetDetail(tweetId: string) {
   tweetDetailCache.delete(tweetId)
 }
 
-export function extractTweetFromDetail(
-  detail: TweetResponse | undefined,
-  tweetId: string,
-): NormalizedTweetResult | undefined {
-  if (!detail) return undefined
-  const instructions = (detail.data?.threaded_conversation_with_injections_v2
-    ?.instructions ?? []) as Instruction[]
-  for (const instruction of instructions) {
-    if (!instruction || instruction.type !== 'TimelineAddEntries') continue
-    const entries = instruction.entries ?? []
-    for (const entry of entries) {
-      if (!entry) continue
-      if (entry.entryId === `tweet-${tweetId}`) {
-        const direct = (
-          (
-            entry.content as
-            | {
-              itemContent?: {
-                tweet_results?: {
-                  result?:
-                    | TweetResult
-                    | TweetWithVisibilityResults
-                    | TweetTombstone
-                }
-              }
-            }
-            | null
-            | undefined
-          )?.itemContent?.tweet_results as
-          | {
-            result?:
-              | TweetResult
-              | TweetWithVisibilityResults
-              | TweetTombstone
-          }
-          | undefined
-        )?.result
-        const normalizedDirect = normalizeTweetResult(direct)
-        if (normalizedDirect) return normalizedDirect
-      }
-
-      const content = entry.content as TimelineModuleContent | undefined
-      const inlineTweet = (
-        (
-          content as
-          | {
-            itemContent?: {
-              tweet_results?: {
-                result?:
-                  | TweetResult
-                  | TweetWithVisibilityResults
-                  | TweetTombstone
-              }
-            }
-          }
-          | null
-          | undefined
-        )?.itemContent?.tweet_results as
-        | {
-          result?:
-            | TweetResult
-            | TweetWithVisibilityResults
-            | TweetTombstone
-        }
-        | undefined
-      )?.result
-      const normalizedInline = normalizeTweetResult(inlineTweet)
-      if (
-        normalizedInline
-        && getTweetIdFromTweet(normalizedInline.tweet) === tweetId
-      ) {
-        return normalizedInline
-      }
-
-      if (content && Array.isArray(content.items)) {
-        for (const item of content.items) {
-          if (item.item?.itemContent?.promotedMetadata !== undefined) {
-            continue
-          }
-          const tweet
-            = (
-              item?.item?.itemContent?.tweet_results as
-              | {
-                result?:
-                  | TweetResult
-                  | TweetWithVisibilityResults
-                  | TweetTombstone
-              }
-              | undefined
-            )?.result ?? undefined
-          const normalizedNested = normalizeTweetResult(tweet)
-          if (
-            normalizedNested
-            && getTweetIdFromTweet(normalizedNested.tweet) === tweetId
-          ) {
-            return normalizedNested
-          }
-        }
-      }
-    }
-  }
-  return undefined
-}
-
 export function applyDetailToTweetCache(
   tweetId: string,
   detail: TweetResponse,
@@ -247,6 +118,39 @@ export function applyDetailToTweetCache(
     true,
     normalized.limitedActions ?? undefined,
   )
+}
+
+function extractTweetFromDetail(
+  detail: TweetResponse | undefined,
+  tweetId: string,
+): NormalizedTweetResult | undefined {
+  if (!detail) return undefined
+  const instructions = detail.data?.threaded_conversation_with_injections_v2?.instructions
+  for (const instruction of instructions ?? []) {
+    if (!instruction || instruction.type !== 'TimelineAddEntries') continue
+    const entries = instruction.entries ?? []
+    for (const entry of entries) {
+      if (!entry) continue
+      if (entry.content.entryType === 'TimelineTimelineItem') {
+        const direct = entry.content.itemContent.tweet_results.result
+        const normalizedDirect = normalizeTweetResult(direct)
+        if (normalizedDirect) return normalizedDirect
+      } else if (entry.content.entryType === 'TimelineTimelineModule') {
+        for (const item of entry.content.items ?? []) {
+          // Remove promoted tweet
+          if (item.item?.itemContent?.promotedMetadata !== undefined) {
+            continue
+          }
+          const tweet = item?.item?.itemContent?.tweet_results.result
+          const normalizedNested = normalizeTweetResult(tweet)
+          if (normalizedNested && normalizedNested.tweet.rest_id === tweetId) {
+            return normalizedNested
+          }
+        }
+      }
+    }
+  }
+  return undefined
 }
 
 export function storeDeletedTweet(
@@ -270,65 +174,39 @@ function analyzeAndCreateRelations(
   tweet: TweetResult,
   refreshRelation: boolean,
 ) {
-  const tweetId = getTweetIdFromTweet(tweet)
-  if (!tweetId) return
+  const tweetId = tweet.rest_id
 
   if (refreshRelation) {
     tweetsRelationStore.delete(tweetId)
   }
 
-  const replyToId
-    = tweet.legacy?.in_reply_to_status_id_str
-      ?? tweet.legacy?.in_reply_to_tweet_id_str
+  const replyToId = tweet.legacy?.in_reply_to_status_id_str
   if (replyToId) addBidirectionalRelation(tweetId, replyToId, 'reply')
 
-  // 处理引用关系
-  const quotedNormalized = normalizeTweetResult(
-    tweet.quoted_status_result?.result,
-  )
+  const quotedNormalized = normalizeTweetResult(tweet.quoted_status_result?.result)
   if (quotedNormalized) {
     const quotedTweet = quotedNormalized.tweet
-    const quotedId = getTweetIdFromTweet(quotedTweet)
-    if (quotedId) {
-      addBidirectionalRelation(tweetId, quotedId, 'quote')
-      storeTweet(
-        quotedTweet,
-        null,
-        false,
-        quotedNormalized.limitedActions ?? undefined,
-      )
-    }
+    addBidirectionalRelation(tweetId, quotedTweet.rest_id, 'quote')
+    storeTweet(
+      quotedTweet,
+      null,
+      false,
+      quotedNormalized.limitedActions ?? undefined,
+    )
   }
 
-  // 处理转推关系
-  const directRetweeted = normalizeTweetResult(
-    tweet.retweeted_status_result?.result,
-  )
-  const legacyRetweeted = normalizeTweetResult(
-    (
-      tweet.legacy as
-      | {
-        retweeted_status_result?: {
-          result?: TweetResult | TweetWithVisibilityResults
-        }
-      }
-      | undefined
-    )?.retweeted_status_result?.result,
-  )
+  const directRetweeted = normalizeTweetResult(tweet.retweeted_status_result?.result)
+  const legacyRetweeted = normalizeTweetResult(tweet.legacy?.retweeted_status_result?.result)
   const retweetedNormalized = directRetweeted ?? legacyRetweeted
   if (retweetedNormalized) {
     const retweetedTweet = retweetedNormalized.tweet
-    const retweetedId = getTweetIdFromTweet(retweetedTweet)
-    if (retweetedId) {
-      addBidirectionalRelation(tweetId, retweetedId, 'retweet')
-      // 递归处理被转推的推文
-      storeTweet(
-        retweetedTweet,
-        null,
-        false,
-        retweetedNormalized.limitedActions ?? undefined,
-      )
-    }
+    addBidirectionalRelation(tweetId, retweetedTweet.rest_id, 'retweet')
+    storeTweet(
+      retweetedTweet,
+      null,
+      false,
+      retweetedNormalized.limitedActions ?? undefined,
+    )
   }
 }
 

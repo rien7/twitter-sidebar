@@ -1,3 +1,4 @@
+/* eslint-disable @eslint-react/no-array-index-key */
 import { ReactNode, useMemo } from 'react'
 
 import { DeletedTweetData } from '@/store/tweetsStore'
@@ -25,13 +26,10 @@ const buildSegments = (
   }
 
   const sorted = entities
-    .filter(
-      (
-        entity,
-      ): entity is TombstoneEntity & { fromIndex: number, toIndex: number } =>
-        typeof entity?.fromIndex === 'number'
-        && typeof entity?.toIndex === 'number'
-        && entity.toIndex >= entity.fromIndex,
+    .filter((entity): entity is TombstoneEntity & { fromIndex: number, toIndex: number } =>
+      typeof entity?.fromIndex === 'number'
+      && typeof entity?.toIndex === 'number'
+      && entity.toIndex >= entity.fromIndex,
     )
     .sort((a, b) => a.fromIndex - b.fromIndex)
 
@@ -75,14 +73,14 @@ const renderSegments = (segments: TextSegment[]): ReactNode => {
     if (segment.type === 'link') {
       return (
         <a
-          key={`${segment.url}-${index}`}
-          href={segment.url}
-          target="_blank"
-          rel="noreferrer"
           className={`
             text-twitter-accent
             hover:underline
           `}
+          href={segment.url}
+          key={`${segment.url}-${index}`}
+          rel="noreferrer"
+          target="_blank"
         >
           {segment.value}
         </a>
@@ -100,7 +98,7 @@ export function DeletedTweetCard({
   linkBottom = false,
   showDivider = false,
 }: DeletedTweetCardProps) {
-  const text = tombstone.tombstone.tombstone?.text?.text ?? '此推文已删除。'
+  const text = tombstone.tombstone.tombstone?.text?.text ?? 'This tweet has been deleted.'
   const entities = tombstone.tombstone.tombstone?.text?.entities
 
   const segments = useMemo(
@@ -110,30 +108,22 @@ export function DeletedTweetCard({
 
   const articleClass = cn(
     'relative bg-twitter-background-surface px-5 py-4',
-    showDivider
-    && variant === 'reply'
-    && !linkBottom
+    showDivider && variant === 'reply' && !linkBottom
     && 'after:absolute after:right-0 after:bottom-0 after:left-16 after:h-px after:bg-twitter-border-light after:content-[\'\']',
   )
 
   return (
     <article className={articleClass}>
-      {linkTop
-        ? (
-            <span
-              aria-hidden
-              className="pointer-events-none absolute top-0 left-[2.625rem] h-3 w-0.5 bg-twitter-text-divider"
-            />
-          )
-        : null}
-      {variant === 'reply' && linkBottom
-        ? (
-            <span
-              aria-hidden
-              className="pointer-events-none absolute top-[67px] bottom-0 left-[2.625rem] w-0.5 bg-twitter-text-divider"
-            />
-          )
-        : null}
+      {linkTop && (
+        <span
+          className="pointer-events-none absolute top-0 left-[2.625rem] h-3 w-0.5 bg-twitter-text-divider"
+        />
+      )}
+      {variant === 'reply' && linkBottom && (
+        <span
+          className="pointer-events-none absolute top-[67px] bottom-0 left-[2.625rem] w-0.5 bg-twitter-text-divider"
+        />
+      )}
       <div className="rounded-2xl bg-twitter-fill px-4 py-3 text-[15px] text-twitter-text-secondary">
         {renderSegments(segments)}
       </div>

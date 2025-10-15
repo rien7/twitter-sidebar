@@ -1,5 +1,5 @@
 import type React from 'react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useState } from 'react'
 
 import {
   createBookmark,
@@ -24,7 +24,7 @@ const TWEET_ACTION_ICONS = {
   bookmark_active: BookmarkActiveIcon,
 } as const
 
-type ActionCounts = {
+interface ActionCounts {
   reply: number | null
   retweet: number | null
   like: number | null
@@ -32,7 +32,7 @@ type ActionCounts = {
   view: number | null
 }
 
-type ActionActives = {
+interface ActionActives {
   retweet: boolean | null
   like: boolean | null
   bookmark: boolean | null
@@ -57,37 +57,30 @@ const adjustCount = (value: number | null, delta: 1 | -1) => {
   return next < 0 ? 0 : next
 }
 
-function TweetActions({
+export default function TweetActions({
   tweet,
   size = 'md',
   onReplyBtnClick,
   disanleAction,
   className,
 }: TweetActionsProps) {
-  const tweetId = tweet.rest_id ?? tweet.legacy?.id_str
+  const tweetId = tweet.rest_id
 
-  const initialCounts = useMemo<ActionCounts>(
-    () => ({
-      reply: tweet.legacy?.reply_count ?? null,
-      retweet:
-        tweet.legacy?.retweet_count || tweet.legacy?.quote_count
-          ? (tweet.legacy.retweet_count ?? 0) + (tweet.legacy.quote_count ?? 0)
-          : null,
-      like: tweet.legacy?.favorite_count ?? null,
-      bookmark: tweet.legacy?.bookmark_count ?? null,
-      view: tweet.views?.count ? parseInt(tweet.views!.count!) : null,
-    }),
-    [tweet],
-  )
+  const initialCounts: ActionCounts = {
+    reply: tweet.legacy?.reply_count ?? null,
+    retweet: tweet.legacy?.retweet_count || tweet.legacy?.quote_count
+      ? (tweet.legacy.retweet_count ?? 0) + (tweet.legacy.quote_count ?? 0)
+      : null,
+    like: tweet.legacy?.favorite_count ?? null,
+    bookmark: tweet.legacy?.bookmark_count ?? null,
+    view: tweet.views?.count ? parseInt(tweet.views!.count!) : null,
+  }
 
-  const initialActives = useMemo<ActionActives>(
-    () => ({
-      retweet: tweet.legacy?.retweeted ?? null,
-      like: tweet.legacy?.favorited ?? null,
-      bookmark: tweet.legacy?.bookmarked ?? null,
-    }),
-    [tweet],
-  )
+  const initialActives: ActionActives = {
+    retweet: tweet.legacy?.retweeted ?? null,
+    like: tweet.legacy?.favorited ?? null,
+    bookmark: tweet.legacy?.bookmarked ?? null,
+  }
 
   const [counts, setCounts] = useState<ActionCounts>(() => ({
     ...initialCounts,
@@ -100,28 +93,14 @@ function TweetActions({
   >(null)
   const [likeActivatedByUser, setLikeActivatedByUser] = useState(false)
 
-  useEffect(() => {
-    setCounts({ ...initialCounts })
-  }, [initialCounts])
-
-  useEffect(() => {
-    setActives({ ...initialActives })
-  }, [initialActives])
-
-  useEffect(() => {
-    setLikeActivatedByUser(false)
-  }, [tweetId])
-
   const sizeValue = ACTION_ICON_SIZE[size]
   const sizeClasses = size === 'sm' ? 'text-[13px]' : 'text-[14px]'
 
   const handleReply = useCallback(async () => {
-    if (!tweetId) return
     onReplyBtnClick()
-  }, [onReplyBtnClick, tweetId])
+  }, [onReplyBtnClick])
 
   const handleToggleRetweet = useCallback(async () => {
-    if (!tweetId) return
     if (pendingAction) return
     const previousActive = actives.retweet
     const previousCount = counts.retweet
@@ -142,7 +121,7 @@ function TweetActions({
         await deleteRetweet(tweetId)
       }
     } catch (error) {
-      console.error('[TSB][TweetActions] 转推失败', error)
+      console.error('[TSB][TweetActions] Failed to retweet.', error)
       setActives(previous => ({ ...previous, retweet: previousActive }))
       setCounts(previous => ({ ...previous, retweet: previousCount }))
     } finally {
@@ -151,7 +130,6 @@ function TweetActions({
   }, [actives.retweet, counts.retweet, pendingAction, tweetId])
 
   const handleToggleLike = useCallback(async () => {
-    if (!tweetId) return
     if (pendingAction) return
     const previousActive = actives.like
     const previousCount = counts.like
@@ -174,7 +152,7 @@ function TweetActions({
         await unfavoriteTweet(tweetId)
       }
     } catch (error) {
-      console.error('[TSB][TweetActions] 点赞失败', error)
+      console.error('[TSB][TweetActions] Failed to like.', error)
       setActives(previous => ({ ...previous, like: previousActive }))
       setCounts(previous => ({ ...previous, like: previousCount }))
       setLikeActivatedByUser(previousUserActivated)
@@ -184,7 +162,6 @@ function TweetActions({
   }, [actives.like, counts.like, likeActivatedByUser, pendingAction, tweetId])
 
   const handleToggleBookmark = useCallback(async () => {
-    if (!tweetId) return
     if (pendingAction) return
     const previousActive = actives.bookmark
     const previousCount = counts.bookmark
@@ -205,7 +182,7 @@ function TweetActions({
         await deleteBookmark(tweetId)
       }
     } catch (error) {
-      console.error('[TSB][TweetActions] 收藏失败', error)
+      console.error('[TSB][TweetActions] Failed to bookmark.', error)
       setActives(previous => ({ ...previous, bookmark: previousActive }))
       setCounts(previous => ({ ...previous, bookmark: previousCount }))
     } finally {
@@ -216,28 +193,22 @@ function TweetActions({
   const handleActionClick = (e: React.MouseEvent, action: ActionKey) => {
     switch (action) {
       case 'reply':
-        e.preventDefault()
-        e.stopPropagation()
-        void handleReply()
+        handleReply()
         break
       case 'retweet':
-        e.preventDefault()
-        e.stopPropagation()
-        void handleToggleRetweet()
+        handleToggleRetweet()
         break
       case 'like':
-        e.preventDefault()
-        e.stopPropagation()
-        void handleToggleLike()
+        handleToggleLike()
         break
       case 'bookmark':
-        e.preventDefault()
-        e.stopPropagation()
-        void handleToggleBookmark()
+        handleToggleBookmark()
         break
       default:
-        break
+        return
     }
+    e.preventDefault()
+    e.stopPropagation()
   }
 
   const actionItems: Array<{
@@ -270,12 +241,6 @@ function TweetActions({
       count: counts.like,
       active: actives.like,
     },
-    // {
-    //   key: "view",
-    //   label: "浏览",
-    //   color: { r: 29, g: 155, b: 240 },
-    //   count: counts.view,
-    // },
     {
       key: 'bookmark',
       label: '书签',
@@ -285,16 +250,11 @@ function TweetActions({
     },
   ]
 
-  if (!tweetId) {
-    return null
-  }
-
   return (
     <div
       className={cn(
         'flex flex-wrap content-start items-center gap-8',
-        size === 'md'
-        && `border-t border-solid border-twitter-divide-light bg-twitter-background-surface`,
+        size === 'md' && `border-t border-solid border-twitter-divide-light bg-twitter-background-surface`,
         size === 'sm' ? 'mt-3' : 'sticky bottom-0 justify-between p-3',
         className,
       )}
@@ -310,29 +270,19 @@ function TweetActions({
         }
         const count = action.count ?? null
         const formatted = formatCount(count ?? undefined)
-        const shouldShowCount
-          = typeof count === 'number' && count > 0 && formatted
-        const isToggle
-          = action.key === 'retweet'
-            || action.key === 'like'
-            || action.key === 'bookmark'
-        const isDisabled
-          = action.disable
-            || (isToggle
-              && pendingAction !== null
-              && (pendingAction === 'retweet'
-                || pendingAction === 'like'
-                || pendingAction === 'bookmark'))
+        const shouldShowCount = typeof count === 'number' && count > 0 && formatted
+        const isToggle = action.key === 'retweet' || action.key === 'like' || action.key === 'bookmark'
+        const isDisabled = action.disable || (isToggle && pendingAction !== null && pendingAction !== 'reply')
         const isPending = pendingAction === action.key
         const isLike = action.key === 'like'
         const iconSize = isLike ? (sizeValue * 8) / 3 : sizeValue
-        const iconWrapperStyle: React.CSSProperties | undefined = isLike
+        const iconWrapperStyle = isLike
           ? {
               width: sizeValue,
               height: sizeValue,
-            }
+            } as React.CSSProperties
           : undefined
-        const iconStyle: React.CSSProperties | undefined = isLike
+        const iconStyle = isLike
           ? {
               position: 'absolute',
               left: '50%',
@@ -340,40 +290,36 @@ function TweetActions({
               transform: 'translate(-50%, -50%)',
               width: iconSize,
               height: iconSize,
-            }
+            } as React.CSSProperties
           : undefined
-        const iconClassName
-          = isLike && action.active
-            // eslint-disable-next-line better-tailwindcss/no-unregistered-classes
-            ? cn('active', likeActivatedByUser && 'user-active')
-            : undefined
+        const iconClassName = isLike && action.active
+        // eslint-disable-next-line better-tailwindcss/no-unregistered-classes
+          ? cn('active', likeActivatedByUser && 'user-active')
+          : undefined
 
         return (
           <button
-            key={action.key}
-            type="button"
-            className={cn(
-              `
-                group relative flex min-h-5 items-center
-                hover:text-(--accent-rgb)
-                disabled:hover:text-twitter-text-secondary
-              `,
-              sizeClasses,
-              action.disable && 'opacity-50',
-              active
-                ? 'text-(--accent-rgb)'
-                : `text-twitter-text-secondary`,
-            )}
-            onClick={e => handleActionClick(e, action.key)}
-            aria-label={action.label}
-            disabled={isDisabled}
             aria-busy={isPending}
+            aria-label={action.label}
+            className={cn(`
+              group relative flex min-h-5 items-center
+              hover:text-(--accent-rgb)
+              disabled:hover:text-twitter-text-secondary
+            `,
+            sizeClasses,
+            action.disable && 'opacity-50',
+            active ? 'text-(--accent-rgb)' : `text-twitter-text-secondary`,
+            )}
+            disabled={isDisabled}
+            key={action.key}
+            onClick={e => handleActionClick(e, action.key)}
             style={
               {
                 '--accent-rgb': `rgb(${action.color.r}, ${action.color.g}, ${action.color.b})`,
                 '--accent-rgba': `rgba(${action.color.r}, ${action.color.g}, ${action.color.b}, 0.1)`,
               } as React.CSSProperties
             }
+            type="button"
           >
             <div className="inline-flex items-center">
               <div
@@ -392,22 +338,16 @@ function TweetActions({
                   style={iconStyle}
                 />
               </div>
-              {shouldShowCount
-                ? (
-                    <span
-                      className={cn(`
-                        px-1 text-[13px]
-                        group-hover:text-current
-                      `,
-                      active
-                        ? 'text-(--accent-rgb)'
-                        : `text-twitter-text-secondary`,
-                      )}
-                    >
-                      {formatted}
-                    </span>
-                  )
-                : null}
+              {shouldShowCount && (
+                <span className={cn(`
+                  px-1 text-[13px]
+                  group-hover:text-current
+                `,
+                active ? 'text-(--accent-rgb)' : `text-twitter-text-secondary`)}
+                >
+                  {formatted}
+                </span>
+              )}
             </div>
           </button>
         )
@@ -415,5 +355,3 @@ function TweetActions({
     </div>
   )
 }
-
-export default TweetActions

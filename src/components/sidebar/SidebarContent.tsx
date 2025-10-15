@@ -1,58 +1,25 @@
 import type { RefObject } from 'react'
-import { useCallback, useMemo, useRef } from 'react'
+import { useCallback, useRef } from 'react'
 
-import { SidebarContentRefContext, SidebarFlipContext } from '@/context/SidebarTimelineContext'
+import { SidebarElementRefContext, useSidebarFlip } from '@/context/sidebar'
 import { openTweetInSidebar } from '@/handlers/sidebarController'
 import type { TweetResult } from '@/types/response'
-import type { SidebarTweetStatus } from '@/types/sidebar'
-import { TweetData, TweetRelation } from '@/types/tweet'
 
 import { SidebarHeader } from './SidebarHeader'
 import { SidebarTimeline } from './SidebarTimeline'
 
 interface SidebarContentProps {
-  isOpen: boolean
-  scrollAreaRef: RefObject<HTMLDivElement>
-  tweet: TweetData | null
-  tweetRelation: TweetRelation | null
-  relateTweets: Record<string, TweetData> | null
-  status: SidebarTweetStatus
-  pinned: boolean
-  onTogglePinned: () => void
-  onClose: () => void
+  scrollAreaRef: RefObject<HTMLDivElement | null>
 }
 
-export function SidebarContent({
-  scrollAreaRef,
-  tweet,
-  tweetRelation,
-  relateTweets,
-  status,
-  pinned,
-  onTogglePinned,
-  onClose,
-}: SidebarContentProps) {
+export function SidebarContent({ scrollAreaRef }: SidebarContentProps) {
   const headerRef = useRef<HTMLElement | null>(null)
   const emptyAreaRef = useRef<HTMLDivElement | null>(null)
-
-  const flipRefreshBaselineRegister = useRef(new Set<() => void>())
-  const flipRefreshBaselineContextValue = useMemo(
-    () => ({
-      register(fn: () => void) {
-        flipRefreshBaselineRegister.current.add(fn)
-        return () => flipRefreshBaselineRegister.current.delete(fn)
-      },
-      refreshAll() {
-        flipRefreshBaselineRegister.current.forEach(fn => fn())
-      },
-    }),
-    [],
-  )
+  const { refreshAllTweetsBaseline } = useSidebarFlip()
 
   const handleSelectTweet = useCallback(
     (
       tweet: TweetResult,
-      controllerData?: string | null,
       articleRef?: RefObject<HTMLElement | null>,
     ) => {
       if (articleRef?.current && scrollAreaRef.current) {
@@ -60,9 +27,9 @@ export function SidebarContent({
         const articleTop = articleRef.current?.getBoundingClientRect().top
         if (articleTop - scrollAreaTop < 0) {
           const onEnd = () => {
-            flipRefreshBaselineContextValue.refreshAll()
+            refreshAllTweetsBaseline()
             openTweetInSidebar(tweet.rest_id)
-            scrollAreaRef.current.removeEventListener('scrollend', onEnd)
+            scrollAreaRef.current?.removeEventListener('scrollend', onEnd)
           }
           scrollAreaRef.current.addEventListener('scrollend', onEnd)
           articleRef.current.scrollIntoView({
@@ -76,45 +43,22 @@ export function SidebarContent({
         openTweetInSidebar(tweet.rest_id)
       }
     },
-    [scrollAreaRef, flipRefreshBaselineContextValue],
+    [scrollAreaRef, refreshAllTweetsBaseline],
   )
 
   return (
-    <SidebarFlipContext value={flipRefreshBaselineContextValue}>
-      <SidebarContentRefContext
-        value={{ headerRef, scrollAreaRef, emptyAreaRef }}
+    <SidebarElementRefContext value={{ headerRef, scrollAreaRef, emptyAreaRef }}>
+      <div className={`
+        flex h-full flex-col border-l border-solid border-twitter-divide-light bg-twitter-background-surface
+        text-twitter-text-primary shadow
+      `}
       >
-        <div className={`
-          flex h-full flex-col border-l border-solid border-twitter-divide-light bg-twitter-background-surface
-          text-twitter-text-primary shadow
-        `}
-        >
-          <SidebarHeader
-            ref={headerRef}
-            pinned={pinned}
-            onTogglePinned={onTogglePinned}
-            onClose={onClose}
-          />
-          <div
-            ref={scrollAreaRef}
-            className="flex-1 overflow-y-auto"
-            style={{ overflowAnchor: 'auto' }}
-          >
-            <SidebarTimeline
-              tweet={tweet}
-              tweetRelation={tweetRelation}
-              relateTweets={relateTweets}
-              status={status}
-              onSelectTweet={handleSelectTweet}
-            />
-            <div
-              ref={emptyAreaRef}
-              className="min-h-1/2"
-              style={{ overflowAnchor: 'none' }}
-            />
-          </div>
+        <SidebarHeader ref={headerRef} />
+        <div className="flex-1 overflow-y-auto" ref={scrollAreaRef}>
+          <SidebarTimeline onSelectTweet={handleSelectTweet} />
+          <div className="min-h-1/2" ref={emptyAreaRef} />
         </div>
-      </SidebarContentRefContext>
-    </SidebarFlipContext>
+      </div>
+    </SidebarElementRefContext>
   )
 }

@@ -1,29 +1,26 @@
-import { forwardRef } from 'react'
+import { RefObject } from 'react'
 
+import { useSidebarStore } from '@/hooks/useSidebarStore'
 import { SidebarCloseIcon, SidebarPinIcon } from '@/icons/SidebarIcons'
+import { sidebarStore } from '@/store/sidebarStore'
 import { cn } from '@/utils/cn'
 
-interface SidebarHeaderProps {
-  pinned: boolean
-  onTogglePinned: () => void
-  onClose: () => void
-}
+export function SidebarHeader({ ref }: { ref: RefObject<HTMLElement | null> }) {
+  const { pinned } = useSidebarStore()
 
-export const SidebarHeader = forwardRef<HTMLElement, SidebarHeaderProps>(
-  ({ pinned, onTogglePinned, onClose }, ref) => (
+  return (
     <header
-      ref={ref}
       className={`
         relative z-20 flex items-center gap-3 border-b border-twitter-border-light bg-twitter-background-surface px-4 py-3
       `}
+      ref={ref}
     >
       <button
         className={`
           group cursor-pointer rounded-md fill-twitter-fill-muted p-2 transition-all
           hover:bg-twitter-background-hover
         `}
-        onClick={onClose}
-        aria-label="关闭推文详情侧边栏"
+        onClick={() => sidebarStore.close()}
       >
         <SidebarCloseIcon />
       </button>
@@ -31,8 +28,6 @@ export const SidebarHeader = forwardRef<HTMLElement, SidebarHeaderProps>(
       <div className="flex-1" />
 
       <button
-        type="button"
-        aria-pressed={pinned}
         className={cn(`
           group flex size-9 items-center justify-center rounded-md p-2 transition-all
           focus-visible:ring-2 focus-visible:ring-twitter-ring-focus focus-visible:ring-offset-2
@@ -45,13 +40,13 @@ export const SidebarHeader = forwardRef<HTMLElement, SidebarHeaderProps>(
             hover:bg-twitter-background-hover
           `,
         )}
-        onClick={onTogglePinned}
-        title={pinned ? '取消固定推文详情' : '固定推文详情'}
+        onClick={() => sidebarStore.togglePinned()}
+        type="button"
       >
         <SidebarPinIcon />
       </button>
     </header>
-  ),
-)
+  )
+}
 
 SidebarHeader.displayName = 'SidebarHeader'

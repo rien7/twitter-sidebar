@@ -2,21 +2,16 @@ import { RefObject, useMemo } from 'react'
 
 import DeletedTweetCard from '@/components/tweet/DeletedTweetCard'
 import TweetCard from '@/components/tweet/TweetCard'
+import { useSidebarStore } from '@/hooks/useSidebarStore'
 import { DeletedTweetData, getDeletedTweet, getTweetRelation } from '@/store/tweetsStore'
 import type { TweetLimitedAction, TweetResult } from '@/types/response'
-import type { SidebarTweetStatus } from '@/types/sidebar'
-import { TweetData, TweetRelation } from '@/types/tweet'
+import { TweetData } from '@/types/tweet'
 import { getUserIdFromTweet } from '@/utils/responseData'
 import { buildAuthorSpine } from '@/utils/threadPrune'
 
 interface SidebarTimelineProps {
-  tweet: TweetData | null
-  tweetRelation: TweetRelation | null
-  relateTweets: Record<string, TweetData> | null
-  status: SidebarTweetStatus
   onSelectTweet: (
     tweet: TweetResult,
-    controllerData?: string | null,
     articleRef?: RefObject<HTMLElement | null>
   ) => void
 }
@@ -25,7 +20,7 @@ type AncestorEntry
   = | { kind: 'tweet', data: TweetData }
     | { kind: 'deleted', data: DeletedTweetData }
 
-type TimelineTweetItem = {
+interface TimelineTweetItem {
   kind: 'tweet'
   key: string
   tweet: TweetResult
@@ -37,7 +32,7 @@ type TimelineTweetItem = {
   limitedActions?: TweetLimitedAction[] | null
 }
 
-type TimelineDeletedItem = {
+interface TimelineDeletedItem {
   kind: 'deleted'
   key: string
   variant: 'main' | 'reply'
@@ -49,170 +44,102 @@ type TimelineDeletedItem = {
 
 type TimelineItem = TimelineTweetItem | TimelineDeletedItem
 
-const isDetailReady = (status: SidebarTweetStatus) =>
-  status === 'success' || status === 'partical'
-
-const useAncestorTweets = (
-  tweetRelation: TweetRelation | null,
-  relateTweets: Record<string, TweetData> | null,
-) => {
-  const hasParentTweet = tweetRelation?.replyTo !== null
-  return useMemo<AncestorEntry[]>(() => {
-    if (!tweetRelation || !hasParentTweet) return []
-    const ancestors: AncestorEntry[] = []
-    let replyTo = tweetRelation.replyTo
-    while (replyTo !== undefined) {
-      const ancestorTweet = relateTweets?.[replyTo]
-      if (ancestorTweet?.result) {
-        ancestors.push({ kind: 'tweet', data: ancestorTweet })
-        const ancestorRelation = getTweetRelation(replyTo)
-        if (
-          ancestorRelation !== undefined
-          && ancestorRelation.replyTo !== undefined
-        ) {
-          replyTo = ancestorRelation.replyTo
-        } else {
-          replyTo = undefined
-        }
-        continue
-      }
-
-      const deleted = getDeletedTweet(replyTo)
-      if (!deleted) break
-      const parentTweetId = deleted.parentTweetId
-      ancestors.push({ kind: 'deleted', data: deleted })
-      replyTo = parentTweetId ?? undefined
-    }
-    return ancestors.reverse()
-  }, [hasParentTweet, tweetRelation, relateTweets])
-}
-
-const useTimelineItems = (
-  tweet: TweetData | null,
-  status: SidebarTweetStatus,
-  tweetRelation: TweetRelation | null,
-  relateTweets: Record<string, TweetData> | null,
-  ancestorTweets: AncestorEntry[],
-) => {
-  return useMemo<TimelineItem[]>(() => {
-    if (!tweet || !tweet.result) return []
-
-    const mainTweet = tweet.result
-
-    const items: TimelineItem[] = []
-
-    ancestorTweets.forEach((ancestor, index) => {
-      if (ancestor.kind === 'tweet') {
-        const key = ancestor.data.result.rest_id ?? `ancestor-${index}`
-        items.push({
-          kind: 'tweet',
-          key,
-          tweet: ancestor.data.result,
-          variant: 'reply',
-          linkTop: index > 0,
-          linkBottom: true,
-          isAncestor: true,
-          limitedActions: ancestor.data.limitedActions ?? null,
-        })
-        return
-      }
-
-      const key = ancestor.data.tweetId ?? `deleted-ancestor-${index}`
-      items.push({
-        kind: 'deleted',
-        key,
-        variant: 'reply',
-        linkTop: index > 0,
-        linkBottom: true,
-        isAncestor: true,
-        tombstone: ancestor.data,
-      })
-    })
-
-    if (mainTweet) {
-      const mainKey = mainTweet.rest_id ?? 'main-key'
-      items.push({
-        kind: 'tweet',
-        key: mainKey,
-        tweet: mainTweet,
-        variant: 'main',
-        linkTop: ancestorTweets.length > 0,
-        controllerData: tweet.controllerData ?? null,
-        limitedActions: tweet.limitedActions ?? null,
-      })
-    }
-
-    if (
-      isDetailReady(status)
-      && relateTweets
-      && tweetRelation
-      && tweetRelation.replies
-    ) {
-      for (const firstId of tweetRelation.replies.keys()) {
-        const branchSpine = buildAuthorSpine(
-          firstId,
-          getUserIdFromTweet(mainTweet),
-          relateTweets,
-        )
-
-        branchSpine.forEach((id, indexInBranch) => {
-          const isLast = indexInBranch === branchSpine.length - 1
-          const linkTop = indexInBranch > 0
-          const linkBottom = branchSpine.length > 1 && !isLast
-          const node = relateTweets?.[id]
-
-          if (node?.result) {
-            items.push({
-              kind: 'tweet',
-              key: node.result.rest_id,
-              tweet: node.result,
-              variant: 'reply',
-              linkTop,
-              linkBottom,
-              controllerData: node.controllerData ?? null,
-              limitedActions: node.limitedActions ?? null,
-            })
-            return
-          }
-
-          const deleted = getDeletedTweet(id)
-          if (!deleted) {
-            // If we encounter an ID without cached data, stop extending this branch.
-            return
-          }
-          items.push({
-            kind: 'deleted',
-            key: deleted.tweetId,
-            variant: 'reply',
-            linkTop,
-            linkBottom,
-            tombstone: deleted,
-          })
-        })
-      }
-    }
-
-    return items
-  }, [status, relateTweets, tweetRelation, tweet, ancestorTweets])
-}
-
 export function SidebarTimeline({
-  tweet,
-  tweetRelation,
-  relateTweets,
-  status,
   onSelectTweet,
 }: SidebarTimelineProps) {
-  const ancestorTweets = useAncestorTweets(tweetRelation, relateTweets)
-  const timelineItems = useTimelineItems(
-    tweet,
-    status,
-    tweetRelation,
-    relateTweets,
-    ancestorTweets,
-  )
+  const { tweet, tweetRelation, relateTweets } = useSidebarStore()
 
-  if (!tweet) {
+  const ancestorTweets = useMemo(() => {
+    let replyTo = tweetRelation?.replyTo
+    const tweetEntry: AncestorEntry[] = []
+    while (replyTo !== undefined) {
+      const tweet = relateTweets?.[replyTo]
+      if (tweet?.result) {
+        tweetEntry.push({ kind: 'tweet', data: tweet })
+        replyTo = getTweetRelation(replyTo)?.replyTo
+      } else { // if cannot get tweet in relateTweets, it may be deleted
+        const deleted = getDeletedTweet(replyTo)
+        // Can find any info about this tweet
+        if (!deleted) break
+        tweetEntry.push({ kind: 'deleted', data: deleted })
+        replyTo = deleted.parentTweetId ?? undefined
+      }
+    }
+
+    const tweets: TimelineItem[] = []
+    tweetEntry.reverse().forEach((entry, index) => {
+      const linkTop = index > 0
+      if (entry.kind === 'tweet') {
+        const tweet = entry.data
+        tweets.push({
+          kind: 'tweet',
+          key: tweet.result.rest_id,
+          tweet: tweet.result,
+          variant: 'reply',
+          linkTop,
+          linkBottom: true,
+          controllerData: tweet.controllerData,
+          limitedActions: tweet.limitedActions,
+        })
+      } else {
+        const deleted = entry.data
+        tweets.push({
+          kind: 'deleted',
+          key: deleted.tweetId,
+          variant: 'reply',
+          linkTop,
+          linkBottom: true,
+          tombstone: deleted,
+        })
+      }
+    })
+    return tweets
+  }, [tweetRelation, relateTweets])
+
+  const mainTweet = useMemo(() => {
+    if (!tweet) return
+    return {
+      kind: 'tweet',
+      key: tweet.result.rest_id,
+      tweet: tweet.result,
+      variant: 'main',
+      linkTop: tweetRelation?.replyTo !== undefined,
+      controllerData: tweet.controllerData,
+      limitedActions: tweet.limitedActions,
+    } as TimelineTweetItem
+  }, [tweet, tweetRelation])
+
+  const childrenTweets = useMemo(() => {
+    if (!tweet?.result || !tweetRelation?.replies || !relateTweets) return []
+    const tweets: TimelineTweetItem[] = []
+    for (const tweetId of tweetRelation.replies.keys()) {
+      const branchSpineTweets = buildAuthorSpine(tweetId, getUserIdFromTweet(tweet?.result), relateTweets)
+      branchSpineTweets.forEach((id, index) => {
+        const tweet = relateTweets[id]
+        const isLast = index === branchSpineTweets.length - 1
+        const linkTop = index > 0
+        const linkBottom = branchSpineTweets.length > 1 && !isLast
+        tweets.push({
+          kind: 'tweet',
+          key: tweet.result.rest_id,
+          tweet: tweet.result,
+          variant: 'reply',
+          linkTop,
+          linkBottom,
+          controllerData: tweet.controllerData,
+          limitedActions: tweet.limitedActions,
+        })
+      })
+    }
+    return tweets
+  }, [relateTweets, tweet, tweetRelation])
+
+  const timelineItems = useMemo(() => {
+    if (!mainTweet) return
+    return [...ancestorTweets, mainTweet, ...childrenTweets]
+  }, [ancestorTweets, mainTweet, childrenTweets])
+
+  if (!timelineItems) {
     return (
       <div className="px-5 py-10 text-center text-[15px] text-twitter-text-secondary">
         选择一条推文即可在此预览详细内容
@@ -224,31 +151,30 @@ export function SidebarTimeline({
     <>
       {timelineItems.map((item) => {
         const showDivider = !item.linkBottom && !item.isAncestor
-        if (item.kind === 'tweet') {
-          return (
-            <TweetCard
-              key={item.key}
-              tweet={item.tweet}
-              variant={item.variant}
-              linkTop={item.linkTop}
-              linkBottom={item.linkBottom}
-              controllerData={item.controllerData ?? null}
-              onSelect={onSelectTweet}
-              showDivider={showDivider}
-              limitedActions={item.limitedActions ?? null}
-            />
-          )
-        }
-        return (
-          <DeletedTweetCard
-            key={item.key}
-            tombstone={item.tombstone}
-            variant={item.variant}
-            linkTop={item.linkTop}
-            linkBottom={item.linkBottom}
-            showDivider={showDivider}
-          />
-        )
+        return item.kind === 'tweet'
+          ? (
+              <TweetCard
+                controllerData={item.controllerData ?? null}
+                key={item.key}
+                limitedActions={item.limitedActions ?? null}
+                linkBottom={item.linkBottom}
+                linkTop={item.linkTop}
+                onSelect={onSelectTweet}
+                showDivider={showDivider}
+                tweet={item.tweet}
+                variant={item.variant}
+              />
+            )
+          : (
+              <DeletedTweetCard
+                key={item.key}
+                linkBottom={item.linkBottom}
+                linkTop={item.linkTop}
+                showDivider={showDivider}
+                tombstone={item.tombstone}
+                variant={item.variant}
+              />
+            )
       })}
     </>
   )

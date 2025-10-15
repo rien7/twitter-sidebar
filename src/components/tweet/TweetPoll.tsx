@@ -8,7 +8,7 @@ import { renderWithTwemoji } from '@/utils/twemoji'
 
 import { formatCount } from './tweetText'
 
-const relativeFormatter = new Intl.RelativeTimeFormat('zh-CN', {
+const relativeFormatter = new Intl.RelativeTimeFormat(undefined, {
   numeric: 'auto',
 })
 
@@ -53,7 +53,7 @@ const formatStatus = (
 interface PollOptionProps {
   optimisticChoice: boolean
   choice: TweetPollInfo['choices'][number]
-  showResults: boolean
+  isVotingClosed: boolean
   totalVotes: number
   isSelected: boolean
   isWinner: boolean
@@ -64,94 +64,69 @@ interface PollOptionProps {
 function PollOption({
   optimisticChoice,
   choice,
-  showResults,
+  isVotingClosed,
   totalVotes,
   isSelected,
   isWinner,
   canVote,
   onVote,
 }: PollOptionProps) {
-  const percentage
-    = showResults && totalVotes > 0
-      ? Math.round(
-        ((choice.count + (optimisticChoice ? 1 : 0)) / totalVotes) * 1000,
-      ) / 10
-      : 0
-  const highlightWidth = showResults
+  const percentage = isVotingClosed && totalVotes > 0
+    ? Math.round(((choice.count + (optimisticChoice ? 1 : 0)) / totalVotes) * 1000) / 10
+    : 0
+  const highlightWidth = isVotingClosed
     ? totalVotes === 0
       ? 1
-      : Math.min(
-          100,
-          Math.max(
-            1,
-            Math.round(
-              ((choice.count + (optimisticChoice ? 1 : 0)) / totalVotes) * 100,
-            ),
-          ),
-        )
+      : Math.min(100, Math.max(1, Math.round(((choice.count + (optimisticChoice ? 1 : 0)) / totalVotes) * 100)))
     : 0
 
   return (
     <button
-      type="button"
-      className={cn(
-        `
-          relative min-h-[32px] min-w-[32px] flex-grow overflow-hidden border border-solid border-transparent bg-transparent
-          px-[1em] transition-[background-color]
-        `,
-        canVote
-        && `
-          cursor-pointer rounded-full border-twitter-accent
-          hover:bg-twitter-accent/10
-        `,
-      )}
+      className={cn(`
+        relative min-h-[32px] min-w-[32px] flex-grow overflow-hidden border border-solid border-transparent bg-transparent
+        px-[1em] transition-[background-color]
+      `,
+      canVote && `
+        cursor-pointer rounded-full border-twitter-accent
+        hover:bg-twitter-accent/10
+      `)}
       disabled={!canVote}
       onClick={() => onVote(choice.id)}
+      type="button"
     >
-      {showResults
-        ? (
-            <span
-              aria-hidden
-              className={cn(
-                'pointer-events-none absolute top-0 bottom-0 left-0 cursor-default rounded-[4px]',
-                !canVote && isWinner
-                  ? 'bg-twitter-accent/55'
-                  : 'bg-twitter-vote-background',
-              )}
-              style={{ width: `${highlightWidth}%`, minWidth: '7px' }}
-            />
-          )
-        : null}
+      {isVotingClosed && (
+        <span
+          className={cn(
+            'pointer-events-none absolute top-0 bottom-0 left-0 cursor-default rounded-[4px]',
+            !canVote && isWinner ? 'bg-twitter-accent/55' : 'bg-twitter-vote-background',
+          )}
+          style={{ width: `${highlightWidth}%`, minWidth: '7px' }}
+        />
+      )}
       <span
         className={cn(
           'relative flex w-full items-center text-[15px] leading-[20px]',
-          canVote
-            ? 'justify-center truncate font-bold text-twitter-accent'
-            : 'justify-between',
+          canVote ? 'justify-center truncate font-bold text-twitter-accent' : 'justify-between',
           isWinner && 'font-bold',
         )}
       >
         <span className="flex items-center">
           {renderWithTwemoji(choice.label)}
-          {isSelected
-            ? (
-                <PollSelectedIcon
-                  className="ml-1"
-                  fontSize="15px"
-                  height="1.25em"
-                  color="var(--color-twitter-text-primary)"
-                />
-              )
-            : undefined}
+          {isSelected && (
+            <PollSelectedIcon
+              className="ml-1"
+              color="var(--color-twitter-text-primary)"
+              fontSize="15px"
+              height="1.25em"
+            />
+          )}
         </span>
-        {!canVote
-          ? (
-              <span>
-                {percentage}
-                %
-              </span>
-            )
-          : undefined}
+        {!canVote && (
+          <span>
+            {percentage}
+            %
+          </span>
+        )}
       </span>
     </button>
   )
@@ -176,25 +151,21 @@ export function TweetPoll({ tweetId, poll, className }: TweetPollProps) {
   const now = Date.now()
   const endsAt = poll.endDateTime ? Date.parse(poll.endDateTime) : Number.NaN
   const hasEnded = Number.isFinite(endsAt) && endsAt <= now
-  const totalVotes = useMemo(() => {
-    return poll.totalVotes + (optimisticChoice === null ? 0 : 1)
-  }, [optimisticChoice, poll])
-  const selectedChoiceId = useMemo(() => {
-    return optimisticChoice ?? poll.selectedChoiceId ?? undefined
-  }, [optimisticChoice, poll])
-  const showResults = useMemo(() => {
-    return hasEnded || poll.countsAreFinal || selectedChoiceId !== undefined
-  }, [hasEnded, selectedChoiceId, poll])
-  const statusText = useMemo(
-    () => formatStatus(poll, hasEnded, totalVotes, now),
+
+  const totalVotes = useMemo(() => poll.totalVotes + (optimisticChoice === null ? 0 : 1),
+    [optimisticChoice, poll])
+  const selectedChoiceId = useMemo(() => optimisticChoice ?? poll.selectedChoiceId ?? undefined,
+    [optimisticChoice, poll])
+  const isVotingClosed = useMemo(() => hasEnded || poll.countsAreFinal || selectedChoiceId !== undefined,
+    [hasEnded, selectedChoiceId, poll])
+  const statusText = useMemo(() => formatStatus(poll, hasEnded, totalVotes, now),
     [poll, hasEnded, totalVotes, now],
   )
   const maxCount = useMemo(() => {
-    if (!showResults) return 0
+    if (!isVotingClosed) return 0
     return poll.choices.reduce((acc, choice) => Math.max(acc, choice.count), 0)
-  }, [poll.choices, showResults])
-  const canVote
-    = !showResults && !hasEnded && !poll.countsAreFinal && Boolean(poll.endpoint)
+  }, [poll.choices, isVotingClosed])
+  const canVote = !isVotingClosed && !hasEnded && !poll.countsAreFinal && Boolean(poll.endpoint)
 
   const handleVote = async (choiceId: number) => {
     if (!canVote) return
@@ -212,7 +183,7 @@ export function TweetPoll({ tweetId, poll, className }: TweetPollProps) {
         choiceId,
       })
     } catch (error) {
-      console.error('[TSB][Poll] 提交投票失败', error)
+      console.error('[TSB][Poll] Fail to poll.', error)
       setOptimisticChoice(null)
     }
   }
@@ -222,23 +193,19 @@ export function TweetPoll({ tweetId, poll, className }: TweetPollProps) {
       <div className="flex flex-col gap-1">
         {poll.choices.map((choice) => {
           const isSelected = selectedChoiceId === choice.id
-          const isWinner
-            = hasEnded
-              && showResults
-              && totalVotes > 0
-              && choice.count === maxCount
+          const isWinner = hasEnded && isVotingClosed && totalVotes > 0 && choice.count === maxCount
 
           return (
             <PollOption
-              key={choice.id}
-              optimisticChoice={optimisticChoice === choice.id}
-              choice={choice}
-              showResults={showResults}
-              totalVotes={totalVotes}
-              isSelected={Boolean(isSelected)}
-              isWinner={isWinner}
               canVote={canVote}
+              choice={choice}
+              isSelected={Boolean(isSelected)}
+              isVotingClosed={isVotingClosed}
+              isWinner={isWinner}
+              key={choice.id}
               onVote={handleVote}
+              optimisticChoice={optimisticChoice === choice.id}
+              totalVotes={totalVotes}
             />
           )
         })}

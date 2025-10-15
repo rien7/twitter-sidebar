@@ -9,13 +9,26 @@ import reactHooks from 'eslint-plugin-react-hooks'
 import simpleImportSort from 'eslint-plugin-simple-import-sort'
 import globals from 'globals'
 import tseslint from 'typescript-eslint'
+import eslintReact from "@eslint-react/eslint-plugin";
 
 export default defineConfig([
   globalIgnores(['dist/']),
   {
-    extends: ['js/recommended'],
+    extends: [
+      js.configs.recommended,
+      tseslint.configs.recommended,
+      eslintReact.configs['recommended-typescript']
+    ],
     files: ['**/*.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
-    languageOptions: { globals: globals.browser },
+    languageOptions: {
+      globals: globals.browser,
+      parser: tseslint.parser,
+      parserOptions: {
+        // Enable project service for better TypeScript integration
+        projectService: true,
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
     plugins: {
       '@stylistic': stylistic,
       js,
@@ -23,10 +36,14 @@ export default defineConfig([
       'simple-import-sort': simpleImportSort,
       'import': importPlugin,
       'import-newlines': importNewLine,
+      'better-tailwindcss': betterTailwind,
     },
     settings: {
-      react: {
+      'react': {
         version: 'detect',
+      },
+      'better-tailwindcss': {
+        entryPoint: 'src/index.css',
       },
     },
   },
@@ -35,6 +52,7 @@ export default defineConfig([
   reactPlugin.configs.flat.recommended,
   reactPlugin.configs.flat['jsx-runtime'],
   stylistic.configs.recommended,
+  eslintReact.configs.recommended,
   {
     rules:
     {
@@ -48,8 +66,12 @@ export default defineConfig([
         'max-len': 130,
       }],
       'no-console': ['warn', { allow: ['warn', 'error'] }],
+      'object-shorthand': ['error'],
       '@stylistic/brace-style': ['error', '1tbs'],
+      '@stylistic/max-len': ['error', { code: 130 }],
+      '@stylistic/array-element-newline': ['error', 'consistent'],
       'react/display-name': 'off',
+      'react/jsx-sort-props': 'error',
       'react/function-component-definition': [
         'error',
         {
@@ -57,18 +79,7 @@ export default defineConfig([
           unnamedComponents: 'arrow-function',
         },
       ],
-    },
-  },
-  {
-    plugins: {
-      'better-tailwindcss': betterTailwind,
-    },
-    settings: {
-      'better-tailwindcss': {
-        entryPoint: 'src/index.css',
-      },
-    },
-    rules: {
+      '@typescript-eslint/consistent-type-definitions': 'error',
       ...betterTailwind.configs['recommended-error'].rules,
       'better-tailwindcss/enforce-consistent-line-wrapping': ['error', {
         printWidth: 130,

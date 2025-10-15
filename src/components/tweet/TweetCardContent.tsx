@@ -1,107 +1,107 @@
-import { Fragment, type ReactNode, RefObject, useMemo } from 'react'
+import React, { Fragment, RefObject, useLayoutEffect, useMemo, useRef } from 'react'
 
 import CardPreview from '@/components/tweet/CardPreview'
 import MediaGallery from '@/components/tweet/MediaGallery'
 import TweetActions from '@/components/tweet/TweetActions'
+import TweetCard from '@/components/tweet/TweetCard'
 import TweetPoll from '@/components/tweet/TweetPoll'
-import type { TweetCardInfo } from '@/components/tweet/tweetText'
-import type { TweetPollInfo } from '@/types/poll'
-import type { MediaEntity, TweetLimitedAction, TweetResult } from '@/types/response'
+import {
+  buildRichTextNodes,
+  extractCardInfo,
+  extractQuotedInfo,
+  extractViews,
+  extraMediaInfo,
+  formatDateTime,
+} from '@/components/tweet/tweetText'
+import { useMediaOverlay } from '@/context/mediaOverlay'
+import type { TweetLimitedAction, TweetResult } from '@/types/response'
 import { cn } from '@/utils/cn'
+import { extractPollInfo } from '@/utils/poll'
 import { getProtected, getUserFromTweet } from '@/utils/responseData'
 
 import ReplyComposer, { ReplyComposerHandle } from '../ReplyComposer'
 
 interface TweetCardContentProps {
   tweet: TweetResult
+  variant: 'main' | 'reply' | 'quote'
   limitedActions?: TweetLimitedAction[] | null
-  isMain: boolean
-  isReply: boolean
-  isQuote: boolean
   composerOpen: boolean
-  onToggleComposer: () => void
-  onComposerExpand: () => void
-  onComposerCollapse: () => void
-  createdAt: string | null
-  viewsText: string | null
-  richTextNodes: { key: string, node: ReactNode }[]
-  media?: MediaEntity[]
-  cardInfo: TweetCardInfo | null
-  poll?: TweetPollInfo | null
-  quotedTweetNode: ReactNode
-  showActions: boolean
-  showMediaGallery: boolean
+  setComposerOpen: React.Dispatch<React.SetStateAction<boolean>>
   bodyTextRef: RefObject<HTMLDivElement | null>
   cardRef: RefObject<HTMLDivElement | null>
-  composerRef: RefObject<ReplyComposerHandle | null>
-  onSelect?: (tweet: TweetResult, controllerData?: string | null) => void
+  onSelect?: (tweet: TweetResult) => void
   controllerData?: string | null
 }
 
-export function TweetCardContent({
+export default function TweetCardContent({
   tweet,
+  controllerData,
+  variant,
   limitedActions,
-  isMain,
-  isReply,
-  isQuote,
-  composerOpen,
-  onToggleComposer,
-  onComposerExpand,
-  onComposerCollapse,
-  createdAt,
-  viewsText,
-  richTextNodes,
-  media,
-  cardInfo,
-  poll,
-  quotedTweetNode,
-  showActions,
-  showMediaGallery,
   bodyTextRef,
   cardRef,
-  composerRef,
   onSelect,
-  controllerData,
+  composerOpen,
+  setComposerOpen,
 }: TweetCardContentProps) {
-  const transitionClass = ''
+  const isMain = variant === 'main'
+  const isReply = variant === 'reply'
+  const isQuote = variant === 'quote'
   const bodyTextClass = cn(
     `break-words whitespace-pre-wrap text-twitter-text-primary`,
-    transitionClass,
     isMain ? 'text-[17px]' : 'text-[15px]',
     isMain && 'mt-3',
     isQuote && 'mt-1',
     isReply && '-mt-4 ml-11 pl-2',
     isQuote && 'z-10',
   )
+
+  const mediaOverlay = useMediaOverlay()
+  const composerRef = useRef<ReplyComposerHandle>(null)
+
+  const richTextNodes = useMemo(() => buildRichTextNodes(tweet), [tweet])
+  const mediaInfo = useMemo(() => extraMediaInfo(tweet), [tweet])
+  const cardInfo = useMemo(() => extractCardInfo(tweet), [tweet])
+  const pollInfo = useMemo(() => extractPollInfo(tweet), [tweet])
+  const { data: quotedTweet, limitAction: quoteLimitAction } = useMemo(() => extractQuotedInfo(tweet), [tweet])
+  const createdAt = formatDateTime(
+    tweet.legacy?.created_at,
+    variant === 'main' ? 'long' : 'relative',
+  )
+
   const galleryVariant = isMain ? 'main' : 'other'
   const isProtected = getProtected(getUserFromTweet(tweet))
-  const showMedia
-    = showMediaGallery && Array.isArray(media) && media.length > 0
-  const showPoll = Boolean(poll)
+  const viewsText = extractViews(tweet)
+  const showMedia = mediaOverlay?.activeTweetId !== tweet.rest_id && Array.isArray(mediaInfo) && mediaInfo.length > 0
+  const showPoll = Boolean(pollInfo)
   const showCardPreview = Boolean(cardInfo)
-  const showQuote = Boolean(quotedTweetNode)
-  const hasSupplementary
-    = showMedia || showPoll || showCardPreview || showQuote
+  const showQuote = Boolean(quotedTweet)
+  const hasSupplementary = showMedia || showPoll || showCardPreview || showQuote
+
   const disabledActions = useMemo(() => {
     const disabled = new Set<'reply' | 'retweet'>()
     if (isProtected) {
       disabled.add('retweet')
     }
-    if (
-      limitedActions?.some(
-        action =>
-          typeof action?.action === 'string'
-          && action.action.toLowerCase() === 'reply',
-      )
-    ) {
+    if (limitedActions?.some(action =>
+      typeof action?.action === 'string' && action.action.toLowerCase() === 'reply',
+    )) {
       disabled.add('reply')
     }
     return disabled.size > 0 ? disabled : undefined
   }, [isProtected, limitedActions])
 
+  useLayoutEffect(() => {
+    if (composerOpen) {
+      requestAnimationFrame(() => {
+        composerRef.current?.focus()
+      })
+    }
+  }, [composerOpen, composerRef])
+
   return (
     <>
-      <div ref={bodyTextRef} className={bodyTextClass}>
+      <div className={bodyTextClass} ref={bodyTextRef}>
         {richTextNodes.map(({ key, node }) => (
           <Fragment key={key}>{node}</Fragment>
         ))}
@@ -113,73 +113,69 @@ export function TweetCardContent({
             isReply && 'ml-11 pl-2',
             isQuote && 'z-10',
           )}
+          key={tweet.rest_id}
           ref={cardRef}
         >
-          {showPoll
-            ? (
-                <TweetPoll
-                  tweetId={tweet.rest_id}
-                  poll={poll!}
-                  controllerData={controllerData ?? null}
-                  className={cn(isQuote && 'z-10')}
-                />
-              )
-            : null}
-          {showMedia
-            ? (
-                <MediaGallery
-                  media={media!}
-                  variant={galleryVariant}
-                  className={cn(isQuote && 'z-10')}
-                  onSelect={
-                    isReply || isQuote
-                      ? () => onSelect?.(tweet, controllerData ?? null)
-                      : undefined
-                  }
-                />
-              )
-            : null}
-          {showCardPreview ? <CardPreview card={cardInfo!} /> : null}
-          {showQuote ? quotedTweetNode : null}
+          {pollInfo && (
+            <TweetPoll
+              className={cn(isQuote && 'z-10')}
+              controllerData={controllerData ?? null}
+              poll={pollInfo}
+              tweetId={tweet.rest_id}
+            />
+          )}
+          {mediaInfo && (
+            <MediaGallery
+              className={cn(isQuote && 'z-10')}
+              media={mediaInfo}
+              onSelect={(isReply || isQuote) ? () => onSelect?.(tweet) : undefined}
+              tweetId={tweet.rest_id}
+              variant={galleryVariant}
+            />
+          )}
+          {cardInfo && <CardPreview card={cardInfo} />}
+          {quotedTweet && (
+            <div className="rounded-2xl border border-solid border-twitter-border-light bg-twitter-background-surface p-3">
+              <TweetCard
+                controllerData={controllerData}
+                limitedActions={quoteLimitAction}
+                onSelect={onSelect}
+                tweet={quotedTweet}
+                variant="quote"
+              />
+            </div>
+          )}
         </div>
       )}
-      {isMain
-        ? (
-            <div className="my-4 flex flex-wrap items-center gap-1 text-[15px] text-twitter-text-secondary">
-              {createdAt ? <span>{createdAt}</span> : null}
-              {viewsText ? <span>·</span> : null}
-              {viewsText ? <span>{viewsText}</span> : null}
-            </div>
-          )
-        : null}
-      {showActions
-        ? (
-            <TweetActions
-              tweet={tweet}
-              size={isMain ? 'md' : 'sm'}
-              onReplyBtnClick={onToggleComposer}
-              disanleAction={disabledActions}
-              className={cn(isReply && 'ml-11 pl-2')}
-            />
-          )
-        : null}
-      {showActions
-        ? (
-            <ReplyComposer
-              ref={composerRef}
-              tweet={tweet}
-              className={cn(
-                isReply && 'py-0 pl-[3.25rem]',
-                isMain && 'border-t border-twitter-divide-light',
-              )}
-              expanded={composerOpen}
-              onExpand={onComposerExpand}
-              onCollapse={onComposerCollapse}
-            />
-          )
-        : null}
+      {isMain && (
+        <div className="my-4 flex flex-wrap items-center gap-1 text-[15px] text-twitter-text-secondary">
+          {createdAt && <span>{createdAt}</span>}
+          {viewsText && <span>·</span>}
+          {viewsText && <span>{viewsText}</span>}
+        </div>
+      )}
+      {!isQuote && (
+        <TweetActions
+          className={cn(isReply && 'ml-11 pl-2')}
+          disanleAction={disabledActions}
+          onReplyBtnClick={() => setComposerOpen(v => !v)}
+          size={isMain ? 'md' : 'sm'}
+          tweet={tweet}
+        />
+      )}
+      {!isQuote && (
+        <ReplyComposer
+          className={cn(
+            isReply && 'py-0 pl-[3.25rem]',
+            isMain && 'border-t border-twitter-divide-light',
+          )}
+          expanded={composerOpen}
+          onCollapse={() => setComposerOpen(false)}
+          onExpand={() => setComposerOpen(true)}
+          ref={composerRef}
+          tweet={tweet}
+        />
+      )}
     </>
   )
 }
-
-export default TweetCardContent

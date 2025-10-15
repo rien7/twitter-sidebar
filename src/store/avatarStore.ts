@@ -1,9 +1,6 @@
 import { TweetResult } from '@/types/response'
 import { getAvatarFromUser, getUserFromTweet, getUserIdFromTweet } from '@/utils/responseData'
 
-/**
- * 缓存用户头像等轻量信息，避免在 TweetDetail 异步返回前出现错位头像。
- */
 const avatarStore = new Map<string, string>()
 
 const AVATAR_SIZE_QUERY = [
@@ -11,7 +8,7 @@ const AVATAR_SIZE_QUERY = [
   'bigger', // 73x73
   'x96', // 96x96
 ] as const
-type AvatarSize = (typeof AVATAR_SIZE_QUERY)[number]
+export type AvatarSize = (typeof AVATAR_SIZE_QUERY)[number]
 const AVATAR_SIZE = new Set(AVATAR_SIZE_QUERY)
 
 export function rememberAvatarById(
@@ -42,11 +39,10 @@ export function getCachedAvatarForTweet(tweet: TweetResult, size: AvatarSize) {
 
 function normalizeAvatarUrl(url: string) {
   if (!url) return url
-  AVATAR_SIZE.forEach((size) => {
+  for (const size of AVATAR_SIZE) {
     if (url.includes(`_${size}`)) {
       return url.replace(`_${size}`, '_size')
     }
-  })
-
+  }
   return url
 }

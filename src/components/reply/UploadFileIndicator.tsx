@@ -1,6 +1,5 @@
+import type { UploadItem } from '@/hooks/useMediaUploads'
 import { cn } from '@/utils/cn'
-
-import type { UploadItem } from './useMediaUploads'
 
 interface UploadFileIndicatorProps {
   items: UploadItem[]
@@ -31,11 +30,11 @@ export function UploadFileIndicator({
     <div className={cn('mt-2 flex flex-col gap-2', className)}>
       {items.map(item => (
         <div
-          key={item.id}
           className={`
             relative overflow-hidden rounded-[8px] bg-twitter-accent/10 px-[16px] py-[12px]
             dark:bg-twitter-accent/20
           `}
+          key={item.id}
         >
           <div className="flex items-center justify-between font-bold text-twitter-text-primary">
             <span className="truncate">{item.name}</span>
@@ -45,12 +44,11 @@ export function UploadFileIndicator({
           </div>
           {/* css mask */}
           <div
-            className={cn(
-              `
-                absolute inset-0 z-10 flex size-full items-center justify-between bg-twitter-accent px-[16px] py-[12px] font-bold
-                text-twitter-text-inverse transition-opacity
-              `,
-              item.status !== 'Uploaded' ? 'opacity-100' : 'opacity-0',
+            className={cn(`
+              absolute inset-0 z-10 flex size-full items-center justify-between bg-twitter-accent px-[16px] py-[12px] font-bold
+              text-twitter-text-inverse transition-opacity
+            `,
+            item.status !== 'Uploaded' ? 'opacity-100' : 'opacity-0',
             )}
             style={{
               WebkitMaskImage: `linear-gradient(to right, black ${

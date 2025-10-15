@@ -1,57 +1,20 @@
 import type { MouseEvent as ReactMouseEvent, RefObject } from 'react'
-import { useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useLayoutEffect, useMemo, useRef, useState } from 'react'
 
-import {
-  buildRichTextNodes,
-  extractAvatar,
-  extractAvatarCache,
-  extractCardInfo,
-  extractName,
-  extractViews,
-  formatDateTime,
-} from '@/components/tweet/tweetText'
-import { useMediaOverlay } from '@/context/mediaOverlay'
-import { useSidebarRoot } from '@/context/sidebarRoot'
-import { SidebarContentContext, SidebarContentRefContext, SidebarFlipContext } from '@/context/SidebarTimelineContext'
+import { useSidebarElementRef, useSidebarFlip, useSidebarRoot, useSidebarTweet } from '@/context/sidebar'
 import { openTweetInSidebar } from '@/handlers/sidebarController'
 import { Target, TargetOption, useFlip } from '@/hooks/useFlip'
 import type { TweetLimitedAction, TweetResult } from '@/types/response'
 import { cn } from '@/utils/cn'
-import { extractPollInfo } from '@/utils/poll'
 
-import type { ReplyComposerHandle } from '../ReplyComposer'
-import { TweetCardContent } from './TweetCardContent'
-import { TweetCardHeader } from './TweetCardHeader'
-
-const useTweetComposer = () => {
-  const [composerOpen, setComposerOpen] = useState(false)
-
-  const onComposerExpand = useCallback(() => {
-    setComposerOpen(true)
-  }, [])
-
-  const onComposerCollapse = useCallback(() => {
-    setComposerOpen(false)
-  }, [])
-
-  const toggleComposer = useCallback(() => {
-    setComposerOpen(value => !value)
-  }, [])
-
-  return {
-    composerOpen,
-    onComposerExpand,
-    onComposerCollapse,
-    toggleComposer,
-  } as const
-}
+import TweetCardContent from './TweetCardContent'
+import TweetCardHeader from './TweetCardHeader'
 
 interface TweetCardProps {
   tweet: TweetResult
   variant?: 'main' | 'quote' | 'reply'
   onSelect?: (
     tweet: TweetResult,
-    controllerData?: string | null,
     articleRef?: RefObject<HTMLElement | null>
   ) => void
   linkTop?: boolean
@@ -61,7 +24,7 @@ interface TweetCardProps {
   limitedActions?: TweetLimitedAction[] | null
 }
 
-function TweetCard({
+export default function TweetCard({
   tweet,
   variant = 'main',
   onSelect,
@@ -71,112 +34,46 @@ function TweetCard({
   showDivider,
   limitedActions,
 }: TweetCardProps) {
-  const { name, screenName } = extractName(tweet)
+  const [composerOpen, setComposerOpen] = useState(false)
+  // For flip
   const articleRef = useRef<HTMLElement | null>(null)
-  const avatar = extractAvatar(tweet)
-  const avatarCache = extractAvatarCache(tweet)
-  const avatarRef = useRef<HTMLImageElement | null>(null)
   const userAvatarRef = useRef<HTMLAnchorElement | null>(null)
   const userNameRef = useRef<HTMLDivElement | null>(null)
   const userHandleRef = useRef<HTMLElement | null>(null)
   const bodyTextRef = useRef<HTMLDivElement | null>(null)
-  const rootRef = useSidebarRoot()!
   const cardRef = useRef<HTMLDivElement | null>(null)
+  const rootRef = useSidebarRoot()
 
-  const sidebarContentRefContext = useContext(SidebarContentRefContext)
-  const headerRef = sidebarContentRefContext?.headerRef
-  const emptyAreaRef = sidebarContentRefContext?.emptyAreaRef
-  const scrollAreaRef = sidebarContentRefContext?.scrollAreaRef
-  const sidebarContentContext = useContext(SidebarContentContext)
-  const mainTweetId = sidebarContentContext?.mainTweetId
+  // Set empty area height
+  const { headerRef, emptyAreaRef, scrollAreaRef } = useSidebarElementRef()
+
+  // Set scroll position on change
+  const { mainTweetId, conversationId, timelineVersion } = useSidebarTweet()
   const previousMainTweetId = useRef<string | null>(null)
-  const conversationId = sidebarContentContext?.conversationId
   const previousConversationId = useRef<string | null>(null)
-  const timelineVersion = sidebarContentContext?.timelineVersion
-  const previousTimelineVersion = useRef<number | null>(null)
-  const registerMainArticleRef = sidebarContentContext?.registerMainArticleRef
-  const mainArticleClientTopRef = sidebarContentContext?.mainArticleTopRef
+  const previousTimelineVersion = useRef<string | null>(null)
 
-  const flipRegistry = useContext(SidebarFlipContext)
+  const { registerMainArticleRef, registerRefreshBaseline, refreshAllTweetsBaseline, mainArticleTopRef } = useSidebarFlip()
 
-  const composerRef = useRef<ReplyComposerHandle>(null)
-  const { composerOpen, onComposerExpand, onComposerCollapse, toggleComposer }
-    = useTweetComposer()
-
-  const legacy = tweet.legacy
-  const media = legacy?.extended_entities?.media ?? legacy?.entities?.media
-  const richTextNodes = useMemo(() => buildRichTextNodes(tweet), [tweet])
-  const createdAt = formatDateTime(
-    legacy?.created_at,
-    variant === 'main' ? 'long' : 'relative',
-  )
-  const viewsText = extractViews(tweet)
-  const quotedTweet
-    = (tweet.quoted_status_result?.result?.__typename === 'Tweet'
-      ? (tweet.quoted_status_result.result as TweetResult)
-      : undefined) ?? undefined
-  const mediaOverlay = useMediaOverlay()
-  const cardInfo = useMemo(() => extractCardInfo(tweet), [tweet])
-  const pollInfo = useMemo(() => extractPollInfo(tweet), [tweet])
-  const isQuote = variant === 'quote'
-  const isReply = variant === 'reply'
   const isMain = variant === 'main'
-  const showActions = !isQuote
-  const showMediaGallery = isMain ? !mediaOverlay?.activeMedia : true
-  const showTimestampInHeader = !isMain && Boolean(createdAt)
-  const quotedTweetNode = quotedTweet
-    ? (
-        <div className="rounded-2xl border border-solid border-twitter-border-light bg-twitter-background-surface p-3">
-          <TweetCard
-            tweet={quotedTweet}
-            variant="quote"
-            controllerData={controllerData}
-            limitedActions={null}
-            onSelect={onSelect}
-          />
-        </div>
-      )
-    : null
+  const isReply = variant === 'reply'
+  const isQuote = variant === 'quote'
 
-  useEffect(() => {
-    if (!avatarRef.current || !avatar) return
-    const img = new Image()
-    img.src = avatar
-    img.onload = () => {
-      if (!avatarRef.current) return
-      avatarRef.current.src = avatar
-    }
-  }, [avatar])
-
-  const openInNewTab = useCallback(() => {
-    const userName = screenName
-    const id = tweet.rest_id
-    const url = `https://x.com/${userName}/status/${id}`
-    window.open(url)
-  }, [tweet, screenName])
-
+  // Update emptyArea height base on tweet height
   useLayoutEffect(() => {
-    if (
-      !isMain
-      || !headerRef?.current
-      || !emptyAreaRef?.current
-      || !articleRef.current
-    )
+    if (!isMain || !headerRef?.current || !emptyAreaRef?.current || !articleRef.current)
       return
     const windowHeight = window.innerHeight
     const headerHeight = headerRef.current.getBoundingClientRect().height
     const articleHeight = articleRef.current.getBoundingClientRect().height
-    emptyAreaRef.current.style.height = `${
-      windowHeight - headerHeight - articleHeight
-    }px`
+    emptyAreaRef.current.style.height = `${windowHeight - headerHeight - articleHeight}px`
   }, [isMain, headerRef, emptyAreaRef, articleRef])
 
+  // Scroll into position
   useLayoutEffect(() => {
     const mainTweetChange = previousMainTweetId.current !== mainTweetId
-    const conversationChange
-      = previousConversationId.current !== conversationId
-    const timelineVersionChange
-      = previousTimelineVersion.current !== timelineVersion
+    const conversationChange = previousConversationId.current !== conversationId
+    const timelineVersionChange = previousTimelineVersion.current !== timelineVersion
 
     previousMainTweetId.current = mainTweetId ?? null
     previousConversationId.current = conversationId ?? null
@@ -200,24 +97,21 @@ function TweetCard({
         block: 'start',
       })
     }
-    registerMainArticleRef?.(articleRef)
+    registerMainArticleRef(articleRef)
 
     // getTweetDetail response
     if (!mainTweetChange && timelineVersionChange) {
-      if (
-        mainArticleClientTopRef
-        && mainArticleClientTopRef?.current !== null
-      ) {
+      if (mainArticleTopRef.current !== null) {
         articleRef.current.scrollIntoView({
           behavior: 'instant',
           block: 'start',
         })
         scrollAreaRef.current.scrollBy({
           behavior: 'instant',
-          top: -mainArticleClientTopRef.current,
+          top: -mainArticleTopRef.current,
         })
-        flipRegistry?.refreshAll()
-        mainArticleClientTopRef.current = null
+        refreshAllTweetsBaseline()
+        mainArticleTopRef.current = null
       }
     }
   }, [
@@ -231,65 +125,46 @@ function TweetCard({
     previousConversationId,
     previousTimelineVersion,
     registerMainArticleRef,
-    mainArticleClientTopRef,
-    flipRegistry,
+    mainArticleTopRef,
+    refreshAllTweetsBaseline,
   ])
 
-  const flipTargets = useMemo(
-    () =>
-      [
-        userAvatarRef,
-        { target: userNameRef, type: 'text' },
-        { target: userHandleRef, type: 'text' },
-        { target: bodyTextRef, type: 'reflow' },
-        { target: cardRef, type: 'reflow' },
-      ] as (Target | TargetOption)[],
-    [],
-  )
-
+  const flipTargets = useMemo(() => [
+    userAvatarRef,
+    { target: userNameRef, type: 'text' },
+    { target: userHandleRef, type: 'text' },
+    { target: bodyTextRef, type: 'reflow' },
+    { target: cardRef, type: 'reflow' },
+  ] as (Target | TargetOption)[], [])
   const { refreshBaseline } = useFlip(flipTargets, [variant, mainTweetId], {
     root: rootRef,
   })
 
   useLayoutEffect(() => {
-    return flipRegistry?.register(refreshBaseline)
-  }, [refreshBaseline, flipRegistry])
-
-  useLayoutEffect(() => {
-    if (composerOpen) {
-      requestAnimationFrame(() => {
-        composerRef.current?.focus()
-      })
-    }
-  }, [composerOpen])
+    return registerRefreshBaseline(refreshBaseline)
+  }, [refreshBaseline, registerRefreshBaseline])
 
   const handleCardClick = (event: ReactMouseEvent<HTMLElement>) => {
     if (!onSelect) return
     if (event.defaultPrevented) return
     if (mainTweetId === tweet.rest_id) return
-    flipRegistry?.refreshAll()
-    onSelect(tweet, controllerData ?? null, articleRef)
+    refreshAllTweetsBaseline()
+    onSelect(tweet, articleRef)
   }
 
   const articleClass = cn(
     'flex flex-col items-start gap-3',
     isMain && 'relative px-5 pt-4',
-    isReply
-    && `relative bg-twitter-background-surface px-5 py-4`,
+    isReply && `relative bg-twitter-background-surface px-5 py-4`,
     isQuote && 'cursor-pointer rounded-2xl',
-    isReply
-    && showDivider
-    && `
+    isReply && showDivider && `
       after:absolute after:content-['']
-      ${
-        linkBottom ? 'after:left-16' : 'after:left-0'
-      }
+      ${linkBottom ? 'after:left-16' : 'after:left-0'}
       after:right-0 after:bottom-0 after:h-px after:bg-twitter-border-light
     `,
-    isReply
-    && linkBottom
-    && composerOpen
-    && 'after:absolute after:right-0 after:bottom-0 after:left-16 after:h-px after:bg-twitter-border-light after:content-[\'\']',
+    isReply && linkBottom && composerOpen && `
+      after:absolute after:right-0 after:bottom-0 after:left-16 after:h-px after:bg-twitter-border-light after:content-['']
+    `,
   )
 
   const articleProps: {
@@ -307,12 +182,8 @@ function TweetCard({
       event.stopPropagation()
       openTweetInSidebar(tweet.rest_id)
     }
-    articleProps.role = 'button'
-    articleProps.tabIndex = 0
     articleProps.onClick = handleClickQuote
   } else if (onSelect) {
-    articleProps.role = 'button'
-    articleProps.tabIndex = 0
     articleProps.onClick = handleCardClick
   }
 
@@ -326,74 +197,35 @@ function TweetCard({
         ref={articleRef}
         style={{ overflowAnchor: 'none' }}
       >
-        {showLinkTop
-          ? (
-              <span
-                aria-hidden
-                className="pointer-events-none absolute top-0 left-[2.625rem] h-3 w-0.5 bg-twitter-text-divider"
-              />
-            )
-          : null}
-        {showLinkBottom
-          ? (
-              <span
-                aria-hidden
-                className="pointer-events-none absolute top-16 bottom-0 left-[2.625rem] w-0.5 bg-twitter-text-divider"
-              />
-            )
-          : null}
-        <div
-          className={cn(
-            'w-full',
-            isMain && 'border-b border-twitter-divide-light',
-          )}
-        >
+        {showLinkTop && (
+          <span className="pointer-events-none absolute top-0 left-[2.625rem] h-3 w-0.5 bg-twitter-text-divider" />
+        )}
+        {showLinkBottom && (
+          <span className="pointer-events-none absolute top-16 bottom-0 left-[2.625rem] w-0.5 bg-twitter-text-divider" />
+        )}
+        <div className={cn('w-full', isMain && 'border-b border-twitter-divide-light')}>
           <TweetCardHeader
+            key={tweet.rest_id}
             tweet={tweet}
-            name={name}
-            screenName={screenName}
-            avatar={avatar}
-            avatarCache={avatarCache}
-            isMain={isMain}
-            isReply={isReply}
-            isQuote={isQuote}
-            createdAt={createdAt ?? null}
-            showTimestampInHeader={showTimestampInHeader}
-            onOpenInNewTab={openInNewTab}
-            avatarRef={avatarRef}
             userAvatarRef={userAvatarRef}
-            userNameRef={userNameRef}
             userHandleRef={userHandleRef}
+            userNameRef={userNameRef}
+            variant={variant}
           />
           <TweetCardContent
-            tweet={tweet}
-            limitedActions={limitedActions ?? null}
-            isMain={isMain}
-            isReply={isReply}
-            isQuote={isQuote}
-            composerOpen={composerOpen}
-            onToggleComposer={toggleComposer}
-            onComposerExpand={onComposerExpand}
-            onComposerCollapse={onComposerCollapse}
-            createdAt={createdAt ?? null}
-            viewsText={viewsText ?? null}
-            richTextNodes={richTextNodes}
-            media={media}
-            cardInfo={cardInfo}
-            poll={pollInfo}
-            quotedTweetNode={quotedTweetNode}
-            showActions={showActions}
-            showMediaGallery={showMediaGallery}
             bodyTextRef={bodyTextRef}
             cardRef={cardRef}
-            composerRef={composerRef}
+            composerOpen={composerOpen}
+            controllerData={controllerData}
+            key={tweet.rest_id}
+            limitedActions={limitedActions}
             onSelect={onSelect}
-            controllerData={controllerData ?? null}
+            setComposerOpen={setComposerOpen}
+            tweet={tweet}
+            variant={variant}
           />
         </div>
       </article>
     </>
   )
 }
-
-export default TweetCard

@@ -1,4 +1,4 @@
-import type { CSSProperties, MouseEvent as ReactMouseEvent } from 'react'
+import { type CSSProperties, type MouseEvent as ReactMouseEvent, useCallback, useMemo } from 'react'
 
 import { useMediaOverlay } from '@/context/mediaOverlay'
 import type { MediaOverlayItem } from '@/types/mediaOverlay'
@@ -8,11 +8,11 @@ import { getHighResolutionUrl, selectVideoVariant } from '@/utils/media'
 
 const MAX_MEDIA_HEIGHT = 320
 
-type BaseMediaLayoutEntry = {
+interface BaseMediaLayoutEntry {
   key: string
-  altText: string
+  altText?: string
   aspectRatio: string
-  overlayItem: MediaOverlayItem | null
+  overlayItem: MediaOverlayItem
 }
 
 type PhotoMediaLayoutEntry = BaseMediaLayoutEntry & {
@@ -31,6 +31,7 @@ type VideoMediaLayoutEntry = BaseMediaLayoutEntry & {
 type MediaLayoutEntry = PhotoMediaLayoutEntry | VideoMediaLayoutEntry
 
 interface MediaGalleryProps {
+  tweetId: string
   media?: MediaEntity[]
   variant?: 'main' | 'other'
   onSelect?: () => void
@@ -38,6 +39,7 @@ interface MediaGalleryProps {
 }
 
 function MediaGallery({
+  tweetId,
   media,
   variant = 'main',
   onSelect,
@@ -46,49 +48,30 @@ function MediaGallery({
   const mediaOverlay = useMediaOverlay()
   const overlayEnabled = !onSelect && mediaOverlay !== null
 
-  if (!media || media.length === 0) return null
   const containerRadius = variant === 'other' ? 'rounded-xl' : 'rounded-2xl'
 
-  const mediaEntries = media.reduce<MediaLayoutEntry[]>(
-    (accumulator, item, index) => {
+  const entries = useMemo(() => {
+    if (!media || media.length === 0) return []
+    const mediaEntries: MediaLayoutEntry[] = []
+    for (const [index, item] of media.entries()) {
       const baseKey = item.media_key ?? `${item.id_str}-${index}`
-      const typedMedia = item as MediaEntity & { ext_alt_text?: string }
-      const altText = typedMedia.ext_alt_text ?? baseKey ?? 'tweet media'
+      const altText = item.ext_alt_text
 
       if (item.type === 'photo') {
-        const width
-          = typedMedia.original_info?.width
-            ?? typedMedia.sizes?.large?.w
-            ?? typedMedia.sizes?.medium?.w
-            ?? null
-        const height
-          = typedMedia.original_info?.height
-            ?? typedMedia.sizes?.large?.h
-            ?? typedMedia.sizes?.medium?.h
-            ?? null
+        const width = item.original_info?.width
+        const height = item.original_info?.height
         const aspectRatio = width && height ? `${width} / ${height}` : '1 / 1'
-        const background
-          = typedMedia.media_url_https
-            ?? typedMedia.expanded_url
-            ?? typedMedia.url
-            ?? null
-        const linkHref
-          = typedMedia.expanded_url ?? typedMedia.url ?? background ?? '#'
-        const overlayItem: MediaOverlayItem | null
-          = overlayEnabled && background
-            ? (() => {
-                const highRes = getHighResolutionUrl(background)
-                return {
-                  kind: 'photo',
-                  key: baseKey,
-                  previewSrc: background,
-                  fullSrc: highRes !== background ? highRes : undefined,
-                  alt: altText,
-                } satisfies MediaOverlayItem
-              })()
-            : null
-
-        accumulator.push({
+        const background = item.media_url_https
+        const linkHref = item.expanded_url
+        const highRes = getHighResolutionUrl(background)
+        const overlayItem = {
+          kind: 'photo',
+          key: baseKey,
+          previewSrc: background,
+          fullSrc: highRes !== background ? highRes : undefined,
+          altText,
+        } as MediaOverlayItem
+        mediaEntries.push({
           type: 'photo',
           key: baseKey,
           altText,
@@ -97,96 +80,52 @@ function MediaGallery({
           linkHref,
           overlayItem,
         })
-
-        return accumulator
-      }
-
-      if (item.type === 'video' || item.type === 'animated_gif') {
+      } else if (item.type === 'video' || item.type === 'animated_gif') {
         const isGif = item.type === 'animated_gif'
-        const poster
-          = typedMedia.media_url_https
-            ?? typedMedia.expanded_url
-            ?? typedMedia.url
-            ?? undefined
-        const variantSource = selectVideoVariant(typedMedia) ?? null
-        const aspectRatio = typedMedia.video_info?.aspect_ratio
-          ? `${typedMedia.video_info.aspect_ratio[0]} / ${typedMedia.video_info.aspect_ratio[1]}`
-          : (() => {
-              const width
-                = typedMedia.original_info?.width
-                  ?? typedMedia.sizes?.large?.w
-                  ?? typedMedia.sizes?.medium?.w
-                  ?? null
-              const height
-                = typedMedia.original_info?.height
-                  ?? typedMedia.sizes?.large?.h
-                  ?? typedMedia.sizes?.medium?.h
-                  ?? null
-              if (width && height) return `${width} / ${height}`
-              return '16 / 9'
-            })()
-        const overlayItem: MediaOverlayItem | null = overlayEnabled
-          ? {
-              kind: 'video',
-              key: baseKey,
-              alt: altText,
-              poster,
-              source: variantSource,
-              isGif,
-            }
-          : null
-
-        accumulator.push({
+        const poster = item.media_url_https
+        const source = selectVideoVariant(item)
+        const aspectRatio = item.video_info!.aspect_ratio?.join(' / ') ?? '1 / 1'
+        const overlayItem = {
+          kind: 'video',
+          key: baseKey,
+          poster,
+          source,
+          isGif,
+        } as MediaOverlayItem
+        mediaEntries.push({
           type: 'video',
           key: baseKey,
-          altText,
           aspectRatio,
           poster,
-          source: variantSource,
+          source,
           isGif,
           overlayItem,
         })
       }
+    }
+    return mediaEntries
+  }, [media])
 
-      return accumulator
-    },
-    [],
-  )
+  const hasVideo = useMemo(() => {
+    return entries.some(entry => entry.type === 'video')
+  }, [entries])
 
-  if (mediaEntries.length === 0) return null
-
-  const overlayItems: MediaOverlayItem[] | null = overlayEnabled
-    ? mediaEntries
-        .map(entry => entry.overlayItem)
-        .filter((item): item is MediaOverlayItem => Boolean(item))
-    : null
-
+  const entriesLength = useMemo(() => entries.length, [entries])
   const baseContainerClass = cn(
     `overflow-hidden border border-twitter-border-strong`,
     containerRadius,
     className,
   )
 
-  const hasVideo = mediaEntries.some(entry => entry.type === 'video')
-
-  const baseContainerStyle: CSSProperties = {
-    maxHeight:
-      hasVideo || mediaEntries.length > 1 ? MAX_MEDIA_HEIGHT : undefined,
+  const baseContainerStyle: CSSProperties = useMemo(() => ({
+    maxHeight: hasVideo || entriesLength > 1 ? MAX_MEDIA_HEIGHT : undefined,
     borderStyle: 'solid',
-  }
+  }), [entriesLength, hasVideo])
 
-  const handleMediaClick = (
-    event: ReactMouseEvent<HTMLElement>,
-    entry: MediaLayoutEntry,
-  ) => {
-    if (
-      variant === 'main'
-      && overlayEnabled
-      && overlayItems
-      && entry.overlayItem
-    ) {
+  const handleMediaClick = useCallback((event: ReactMouseEvent<HTMLElement>, entry: MediaLayoutEntry) => {
+    if (variant === 'main' && overlayEnabled && entry.overlayItem) {
       event.preventDefault()
-      mediaOverlay?.openMedia(entry.overlayItem, overlayItems)
+      mediaOverlay?.openMedia(tweetId, entry.overlayItem, entries.map(entry => entry.overlayItem))
       return
     }
 
@@ -194,195 +133,161 @@ function MediaGallery({
       event.preventDefault()
       onSelect()
     }
-  }
+  }, [entries, mediaOverlay, onSelect, overlayEnabled, tweetId, variant])
 
   const renderMediaItem = (
     entry: MediaLayoutEntry,
-    options: {
-      className?: string
-      style?: CSSProperties
-      includeAspectRatio?: boolean
-      aspectRatio?: string
-    } = {},
+    className?: string,
+    aspectRatio?: string,
   ) => {
-    const {
-      className: extraClassName,
-      style,
-      includeAspectRatio = true,
-      aspectRatio,
-    } = options
-    const resolvedAspectRatio
-      = includeAspectRatio && (aspectRatio ?? entry.aspectRatio)
-        ? { aspectRatio: aspectRatio ?? entry.aspectRatio }
-        : {}
-
     if (entry.type === 'photo') {
       return (
-        <a
-          key={entry.key}
-          href={entry.linkHref}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label={entry.altText}
-          className={cn(
-            `relative block overflow-hidden bg-twitter-background-inverse`,
-            extraClassName,
-          )}
-          style={{ ...resolvedAspectRatio, ...style }}
-          onClick={event => handleMediaClick(event, entry)}
-        >
-          {entry.background
-            ? (
-                <span
-                  aria-hidden="true"
-                  className="absolute inset-0"
-                  style={{
-                    backgroundImage: `url(${entry.background})`,
-                    backgroundPosition: 'center',
-                    backgroundSize: 'cover',
-                    backgroundRepeat: 'no-repeat',
-                    flexBasis: 'auto',
-                  }}
-                />
-              )
-            : null}
-        </a>
+        <MediaItemPhoto
+          aspectRatio={aspectRatio}
+          className={className}
+          entry={entry}
+          handleMediaClick={handleMediaClick}
+        />
+      )
+    } else {
+      return (
+        <MediaItemVideo
+          aspectRatio={aspectRatio}
+          className={className}
+          entry={entry}
+          handleMediaClick={handleMediaClick}
+        />
       )
     }
-
-    return (
-      <div
-        key={entry.key}
-        className={cn(
-          'group relative flex size-full overflow-hidden',
-          extraClassName,
-        )}
-        style={{ ...resolvedAspectRatio, ...style }}
-        onClick={event => handleMediaClick(event, entry)}
-        role={onSelect ? 'button' : undefined}
-        tabIndex={onSelect ? 0 : undefined}
-      >
-        <video
-          className="size-full"
-          poster={entry.poster}
-          controls={!entry.isGif}
-          autoPlay={entry.isGif}
-          loop={entry.isGif}
-          muted={entry.isGif}
-        >
-          {entry.source
-            ? (
-                <source src={entry.source.url} type={entry.source.content_type} />
-              )
-            : null}
-        </video>
-        {onSelect
-          ? (
-              <div className={`
-                pointer-events-none absolute inset-0 bg-black/0 transition
-                group-hover:bg-black/20
-              `}
-              />
-            )
-          : null}
-      </div>
-    )
   }
 
-  if (mediaEntries.length === 1) {
+  if (entriesLength === 1) {
     return (
       <div
         className={cn(baseContainerClass, 'flex flex-col')}
         style={baseContainerStyle}
       >
-        {renderMediaItem(mediaEntries[0], {
-          className: 'h-full w-full',
-        })}
+        {renderMediaItem(entries[0], 'h-full w-full')}
       </div>
     )
-  }
-
-  if (mediaEntries.length === 2) {
+  } else if (entriesLength === 2) {
     return (
       <div
         className={cn(baseContainerClass, 'flex flex-row gap-0.5')}
         style={baseContainerStyle}
       >
-        {mediaEntries.map(entry =>
-          renderMediaItem(entry, {
-            className: 'flex-1',
-          }),
+        {entries.map(entry =>
+          renderMediaItem(entry, 'flex-1'),
         )}
       </div>
     )
-  }
-
-  if (mediaEntries.length === 3) {
+  } else if (entries.length === 3) {
     return (
       <div
         className={cn(baseContainerClass, 'flex flex-row gap-0.5')}
         style={baseContainerStyle}
       >
-        {renderMediaItem(mediaEntries[0], {
-          className: 'flex-1 min-h-0',
-          aspectRatio: '1 / 1',
-        })}
+        {renderMediaItem(entries[0], 'flex-1 min-h-0', '1 / 1')}
         <div className="flex min-h-0 flex-1 flex-col gap-0.5">
-          {renderMediaItem(mediaEntries[1], {
-            className: 'flex-1 min-h-0',
-            aspectRatio: '1 / 1',
-          })}
-          {renderMediaItem(mediaEntries[2], {
-            className: 'flex-1 min-h-0',
-            aspectRatio: '1 / 1',
-          })}
+          {renderMediaItem(entries[1], 'flex-1 min-h-0', '1 / 1')}
+          {renderMediaItem(entries[2], 'flex-1 min-h-0', '1 / 1')}
         </div>
       </div>
     )
-  }
-
-  if (mediaEntries.length === 4) {
+  } else {
     return (
       <div
         className={cn(baseContainerClass, 'flex flex-col gap-0.5')}
         style={baseContainerStyle}
       >
         <div className="flex min-h-0 flex-1 gap-0.5">
-          {renderMediaItem(mediaEntries[0], {
-            className: 'flex-1 min-h-0',
-            aspectRatio: '1 / 1',
-          })}
-          {renderMediaItem(mediaEntries[1], {
-            className: 'flex-1 min-h-0',
-            aspectRatio: '1 / 1',
-          })}
+          {renderMediaItem(entries[0], 'flex-1 min-h-0', '1 / 1')}
+          {renderMediaItem(entries[1], 'flex-1 min-h-0', '1 / 1')}
         </div>
         <div className="flex min-h-0 flex-1 gap-0.5">
-          {renderMediaItem(mediaEntries[2], {
-            className: 'flex-1 min-h-0',
-            aspectRatio: '1 / 1',
-          })}
-          {renderMediaItem(mediaEntries[3], {
-            className: 'flex-1 min-h-0',
-            aspectRatio: '1 / 1',
-          })}
+          {renderMediaItem(entries[2], 'flex-1 min-h-0', '1 / 1')}
+          {renderMediaItem(entries[3], 'flex-1 min-h-0', '1 / 1')}
         </div>
       </div>
     )
   }
+}
 
+function MediaItemPhoto({
+  entry,
+  handleMediaClick,
+  className,
+  aspectRatio,
+}: {
+  entry: PhotoMediaLayoutEntry
+  handleMediaClick: (event: ReactMouseEvent<HTMLElement>, entry: PhotoMediaLayoutEntry) => void
+  className?: string
+  aspectRatio?: string
+}) {
   return (
-    <div
-      className={cn(baseContainerClass, 'flex flex-wrap gap-0.5')}
-      style={baseContainerStyle}
-    >
-      {mediaEntries.map(entry =>
-        renderMediaItem(entry, {
-          className: 'flex-1',
-        }),
+    <a
+      aria-label={entry.altText}
+      className={cn(
+        `relative block overflow-hidden bg-twitter-background-inverse`,
+        className,
       )}
-    </div>
+      href={entry.linkHref}
+      key={entry.key}
+      onClick={event => handleMediaClick(event, entry)}
+      rel="noopener noreferrer"
+      style={{ aspectRatio: aspectRatio ?? entry.aspectRatio }}
+      target="_blank"
+    >
+      {entry.background && (
+        <span
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `url(${entry.background})`,
+            backgroundPosition: 'center',
+            backgroundSize: 'cover',
+            backgroundRepeat: 'no-repeat',
+            flexBasis: 'auto',
+          }}
+        />
+      )}
+    </a>
   )
 }
 
+function MediaItemVideo({
+  entry,
+  handleMediaClick,
+  className,
+  aspectRatio,
+}: {
+  entry: VideoMediaLayoutEntry
+  handleMediaClick: (event: ReactMouseEvent<HTMLElement>, entry: VideoMediaLayoutEntry) => void
+  className?: string
+  aspectRatio?: string
+}) {
+  return (
+    <div
+      className={cn(
+        'group relative flex size-full overflow-hidden',
+        className,
+      )}
+      key={entry.key}
+      onClick={event => handleMediaClick(event, entry)}
+      style={{ aspectRatio: aspectRatio ?? entry.aspectRatio }}
+    >
+      <video
+        autoPlay={entry.isGif}
+        className="size-full"
+        controls={!entry.isGif}
+        loop={entry.isGif}
+        muted={entry.isGif}
+        poster={entry.poster}
+      >
+        {entry.source && (
+          <source src={entry.source.url} type={entry.source.content_type} />
+        )}
+      </video>
+    </div>
+  )
+}
 export default MediaGallery

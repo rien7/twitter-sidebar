@@ -9,9 +9,10 @@ export const MEDIA_OVERLAY_CLOSE_EVENT = 'tsb:media-overlay-close'
 export const dispatchOpenMediaOverlay = (
   items: MediaOverlayItem[],
   activeKey: string,
+  tweetId: string,
 ) => {
   if (!items.length) return
-  const detail: MediaOverlayOpenDetail = { items, activeKey }
+  const detail: MediaOverlayOpenDetail = { items, activeKey, tweetId }
   window.dispatchEvent(
     new CustomEvent<MediaOverlayOpenDetail>(MEDIA_OVERLAY_OPEN_EVENT, {
       detail,

@@ -20,5 +20,5 @@
       "@types/chrome"
     ],
   },
-  "include": ["./src"]
+  "include": ["./src", "./eslint.config.js"]
 }
