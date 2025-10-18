@@ -66,13 +66,16 @@ export default function TweetCardContent({
   const { data: quotedTweet, limitAction: quoteLimitAction } = useMemo(() => extractQuotedInfo(tweet), [tweet])
   const createdAt = formatDateTime(
     tweet.legacy?.created_at,
-    variant === 'main' ? 'long' : 'relative',
+    isMain ? 'long' : 'relative',
   )
 
   const galleryVariant = isMain ? 'main' : 'other'
-  const isProtected = getProtected(getUserFromTweet(tweet))
-  const viewsText = extractViews(tweet)
-  const showMedia = mediaOverlay?.activeTweetId !== tweet.rest_id && Array.isArray(mediaInfo) && mediaInfo.length > 0
+  const isProtected = useMemo(() => getProtected(getUserFromTweet(tweet)), [tweet])
+  const viewsText = useMemo(() => extractViews(tweet), [tweet])
+  const showMedia = useMemo(() => {
+    const result = mediaOverlay?.activeTweetId !== tweet.rest_id && Array.isArray(mediaInfo) && mediaInfo.length > 0
+    return result
+  }, [mediaInfo, mediaOverlay, tweet])
   const showPoll = Boolean(pollInfo)
   const showCardPreview = Boolean(cardInfo)
   const showQuote = Boolean(quotedTweet)
@@ -124,7 +127,7 @@ export default function TweetCardContent({
               tweetId={tweet.rest_id}
             />
           )}
-          {mediaInfo && (
+          {mediaInfo && showMedia && (
             <MediaGallery
               className={cn(isQuote && 'z-10')}
               media={mediaInfo}

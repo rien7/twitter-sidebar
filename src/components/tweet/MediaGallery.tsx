@@ -136,6 +136,7 @@ function MediaGallery({
   }, [entries, mediaOverlay, onSelect, overlayEnabled, tweetId, variant])
 
   const renderMediaItem = (
+    key: string,
     entry: MediaLayoutEntry,
     className?: string,
     aspectRatio?: string,
@@ -147,6 +148,7 @@ function MediaGallery({
           className={className}
           entry={entry}
           handleMediaClick={handleMediaClick}
+          key={key}
         />
       )
     } else {
@@ -156,6 +158,7 @@ function MediaGallery({
           className={className}
           entry={entry}
           handleMediaClick={handleMediaClick}
+          key={key}
         />
       )
     }
@@ -167,7 +170,7 @@ function MediaGallery({
         className={cn(baseContainerClass, 'flex flex-col')}
         style={baseContainerStyle}
       >
-        {renderMediaItem(entries[0], 'h-full w-full')}
+        {renderMediaItem(`${tweetId}-media-0`, entries[0], 'h-full w-full')}
       </div>
     )
   } else if (entriesLength === 2) {
@@ -176,8 +179,8 @@ function MediaGallery({
         className={cn(baseContainerClass, 'flex flex-row gap-0.5')}
         style={baseContainerStyle}
       >
-        {entries.map(entry =>
-          renderMediaItem(entry, 'flex-1'),
+        {entries.map((entry, index) =>
+          renderMediaItem(`${tweetId}-media-${index}`, entry, 'flex-1'),
         )}
       </div>
     )
@@ -187,10 +190,10 @@ function MediaGallery({
         className={cn(baseContainerClass, 'flex flex-row gap-0.5')}
         style={baseContainerStyle}
       >
-        {renderMediaItem(entries[0], 'flex-1 min-h-0', '1 / 1')}
+        {renderMediaItem(`${tweetId}-media-0`, entries[0], 'flex-1 min-h-0', '1 / 1')}
         <div className="flex min-h-0 flex-1 flex-col gap-0.5">
-          {renderMediaItem(entries[1], 'flex-1 min-h-0', '1 / 1')}
-          {renderMediaItem(entries[2], 'flex-1 min-h-0', '1 / 1')}
+          {renderMediaItem(`${tweetId}-media-1`, entries[1], 'flex-1 min-h-0', '1 / 1')}
+          {renderMediaItem(`${tweetId}-media-2`, entries[2], 'flex-1 min-h-0', '1 / 1')}
         </div>
       </div>
     )
@@ -201,12 +204,12 @@ function MediaGallery({
         style={baseContainerStyle}
       >
         <div className="flex min-h-0 flex-1 gap-0.5">
-          {renderMediaItem(entries[0], 'flex-1 min-h-0', '1 / 1')}
-          {renderMediaItem(entries[1], 'flex-1 min-h-0', '1 / 1')}
+          {renderMediaItem(`${tweetId}-media-0`, entries[0], 'flex-1 min-h-0', '1 / 1')}
+          {renderMediaItem(`${tweetId}-media-1`, entries[1], 'flex-1 min-h-0', '1 / 1')}
         </div>
         <div className="flex min-h-0 flex-1 gap-0.5">
-          {renderMediaItem(entries[2], 'flex-1 min-h-0', '1 / 1')}
-          {renderMediaItem(entries[3], 'flex-1 min-h-0', '1 / 1')}
+          {renderMediaItem(`${tweetId}-media-2`, entries[2], 'flex-1 min-h-0', '1 / 1')}
+          {renderMediaItem(`${tweetId}-media-3`, entries[3], 'flex-1 min-h-0', '1 / 1')}
         </div>
       </div>
     )
